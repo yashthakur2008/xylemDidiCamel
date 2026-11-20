@@ -372,7 +372,10 @@ export function Evaluation({
                 ? new Date(run.presented_at).toLocaleString()
                 : "Awaiting display acknowledgement"}
               . Before/after saved edits are included in exports. Synthetic
-              trace timing is separate from response preparation timing.
+              trace timing is separate from response preparation timing. Exports
+              preserve the original stimulus. After an app upgrade, the live
+              display may use newer installed rules. Analyze the frozen original
+              stimulus rather than treating the current display as the baseline.
             </p>
             <ol className="timeline">
               {run.log.map((entry, i) => (

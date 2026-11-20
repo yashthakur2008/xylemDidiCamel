@@ -70,7 +70,7 @@ def create_desktop_app(db_path, tokens, assets):
 
     @app.get('/{path:path}', include_in_schema=False)
     def asset(path: str):
-        if path in ('', 'operations', 'crew'):
+        if path in ('', 'operations', 'crew', 'evaluation'):
             path = 'index.html'
         parts = path.split('/')
         if (parts[0] in ('api', 'desktop') or any(p in ('', '.', '..') or p.startswith('.') for p in parts)

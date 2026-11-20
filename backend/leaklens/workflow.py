@@ -89,3 +89,12 @@ def approve_clearance(state, ident, actor):
     event["clearance"] = {"approved_at": now_iso(), "delivery": "simulated_only", "regulatory_clearance": False}
     audit(event, "clearance_approved", actor)
     return event
+
+
+def edit_sampling_plan(state, ident, body, actor):
+    event = open_event(state, ident)
+    require(body.expected_plan == event["sampling_plan"], "Sampling plan changed; review the current plan before retrying")
+    require(not event["job"]["approved"], "Dispatched sampling plan cannot be edited")
+    event["sampling_plan"] = body.plan
+    audit(event, "sampling_plan_edited", actor)
+    return event

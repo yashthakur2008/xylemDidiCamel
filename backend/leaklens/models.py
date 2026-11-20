@@ -42,3 +42,8 @@ class Scenario(Input):
 
 class Reset(Input):
     confirm: Literal["RESET DEMO"]
+
+
+class SamplingPlan(Input):
+    plan: list[Annotated[str, StringConstraints(min_length=10, max_length=1000)]] = Field(min_length=1, max_length=10)
+    expected_plan: list[str] = Field(max_length=10)

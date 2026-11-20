@@ -13,6 +13,7 @@ from .models import Reading
 from .network import network_view
 from .store import Store
 from .response_api import response_router
+from .evaluation_api import evaluation_router
 
 
 def create_app(db_path=None, tokens=None):
@@ -23,7 +24,7 @@ def create_app(db_path=None, tokens=None):
         raise ValueError("Configure three distinct ASCII LEAKLENS_*_TOKEN values, each at least 32 characters")
     tokens = dict(tokens)
     store = Store(db_path or os.environ.get("LEAKLENS_DB", str(Path(__file__).parent.parent / "data/demo.sqlite3")))
-    app = FastAPI(title="LeakLens Demo API", version="0.1.0", description="Fictional Water Quality prototype. No real notices or equipment controls. Not regulatory clearance.")
+    app = FastAPI(title="Confluence Demo API", version="0.2.0", description="Fictional Water Quality prototype. No real notices or equipment controls. Not regulatory clearance.")
     app.state.store = store
 
     @app.exception_handler(RequestValidationError)
@@ -72,4 +73,5 @@ def create_app(db_path=None, tokens=None):
         return store.update(lambda state: events.ingest(state, body, actor))
 
     app.include_router(response_router(store, allow))
+    app.include_router(evaluation_router(store, allow))
     return app
