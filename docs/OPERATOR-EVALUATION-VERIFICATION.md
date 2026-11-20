@@ -40,3 +40,11 @@ No actual pressure rig or utility operator was available through these tools. Th
 - Actual packaged Mac app: **9 passed** in the native acceptance suite, with empty PATH and isolated data. Includes complete response/restart, single instance, evaluation persistence, cancelled quit/reload/window-close retaining both draft and healthy backend, malformed/untrusted IPC rejection, crash escape, and native JSON/CSV downloads whose saved bytes contain schema1, version0.2.0 and available detector source hash.
 
 The installed-app and Windows-installer boundaries are still recorded below only after their final runs complete.
+
+### Installed Mac acceptance
+
+The final local DMG passed `hdiutil verify`, was mounted read-only and copied to `/Users/yashthakur/Applications/Confluence.app` without replacing the older LeakLens.app. All **9 native acceptance tests passed against that installed executable**, including actual JSON/CSV file downloads, persistence and native dirty-edit protection. Test data used isolated temporary directories, not the user's existing demo records. Independent macOS CI also passed at run44722472425.
+
+### Lovable boundary
+
+Lovable accepted the original landing brief and produced an unpublished preview. The safe follow-up availability check found another application frontmost and only shallow Lovable accessibility groups. Final screenshot/method insertion, full mobile acceptance and publication remain blocked on safe access. The handoff at `docs/LOVABLE-HANDOFF.md` contains the exact project, pinned public screenshot URLs and verified methods URL. No claim is made that the revised public landing is live.
