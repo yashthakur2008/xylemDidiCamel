@@ -1,4 +1,4 @@
-# LeakLens desktop
+# Confluence desktop
 
 An offline, single-user Water Quality simulation for macOS and Windows. This is a real desktop application with a bundled Python runtime and its own window, not a PWA/browser shortcut. The marketing website remains on Lovable.
 
@@ -6,9 +6,9 @@ An offline, single-user Water Quality simulation for macOS and Windows. This is 
 
 Download the appropriate installer from the repository Releases page when available. macOS builds target Apple Silicon; Windows builds target x64. Windows and macOS packages are built on their respective platforms. Do not use source archives as installers.
 
-- macOS: open the DMG and copy LeakLens to Applications.
+- macOS: open the DMG and copy Confluence to Applications.
 - Windows: run the NSIS setup executable and select an installation folder.
-- Launch LeakLens. No terminal, Node, Python, remote backend, or manual token entry is required.
+- Launch Confluence. No terminal, Node, Python, remote backend, or manual token entry is required.
 - Start in Operations, simulate a main break, review/approve the advisory and crew assignment, and switch to Crew app to record repair, flushing and samples.
 - A failed sample requires another flush. Two clear samples plus recovered fresh pressure allow the operator to approve simulated all-clear.
 
@@ -16,7 +16,7 @@ Download the appropriate installer from the repository Releases page when availa
 
 ## Local storage and privacy
 
-The SQLite database is stored in Electron's application-data directory: normally `~/Library/Application Support/LeakLens` on macOS and `%APPDATA%/LeakLens` on Windows. Actual directory naming follows Electron's application name. Data survives closing/reopening and application replacement. Use the in-app, explicitly confirmed Reset demonstration action to delete demo records.
+The SQLite database is stored in Electron's application-data directory: normally `~/Library/Application Support/LeakLens` on macOS and `%APPDATA%/LeakLens` on Windows. Confluence explicitly preserves the legacy LeakLens data-directory name across the rebrand. Data survives closing/reopening and application replacement. Use the in-app, explicitly confirmed Reset demonstration action to delete ordinary demo records. Test-mode Reset starts a new trial without deleting prior trial evidence. See [the evaluation runbook](../docs/OPERATOR-EVALUATION.md).
 
 Every launch creates fresh private role credentials in memory and sends them to the backend through stdin. The desktop sandbox receives them only through a restricted preload bridge. No credentials are bundled, placed in URLs, or written to a token file. This is local demo access, not production identity management. No customer notices or equipment commands are sent. Independent installations do not synchronize.
 
@@ -40,14 +40,14 @@ Outputs are under `desktop/dist`. To test the actual Mac app:
 
 ```sh
 cd desktop
-LEAKLENS_PACKAGED="$PWD/dist/mac-arm64/LeakLens.app/Contents/MacOS/LeakLens" npm run test:desktop
+LEAKLENS_PACKAGED="$PWD/dist/mac-arm64/Confluence.app/Contents/MacOS/Confluence" npm run test:desktop
 ```
 
 On Windows PowerShell:
 
 ```powershell
 cd desktop
-$env:LEAKLENS_PACKAGED = "$PWD/dist/win-unpacked/LeakLens.exe"
+$env:LEAKLENS_PACKAGED = "$PWD/dist/win-unpacked/Confluence.exe"
 npm run test:desktop
 ```
 
