@@ -15,59 +15,79 @@ export function useBackend(enabled: boolean, tokens: Tokens) {
     [available, setAvailable] = useState(false),
     [busy, setBusy] = useState(false);
   const lock = useRef(false),
-    generation = useRef(0);
-  const refresh = useCallback(async (signal?: AbortSignal) => {
-    const gen = ++generation.current;
-    try {
-      const [n, e] = await Promise.all([
-        request<Network>("/network", "", undefined, undefined, signal),
-        request<{ events: IncidentData[] }>(
-          "/events",
-          "",
-          undefined,
-          undefined,
-          signal,
-        ),
-      ]);
-      if (gen === generation.current) {
-        setNetwork(n);
-        setEvents(e.events);
-        setAvailable(true);
-        setConnectionError("");
-      }
-    } catch (e) {
-      if (signal?.aborted || gen !== generation.current) return;
-      setAvailable(false);
-      setConnectionError(
-        "Connection unavailable. Last-known data may be stale. " +
-          (e instanceof Error ? e.message : ""),
-      );
+    generation = useRef(0),
+    flight = useRef<Promise<void> | null>(null),
+    controller = useRef<AbortController | null>(null);
+  const refresh = useCallback(async (force = false): Promise<void> => {
+    while (flight.current) {
+      await flight.current;
+      if (!force) return;
     }
+    const gen = ++generation.current,
+      abort = new AbortController();
+    controller.current = abort;
+    const task = (async () => {
+      try {
+        const [n, e] = await Promise.all([
+          request<Network>("/network", "", undefined, undefined, abort.signal),
+          request<{ events: IncidentData[] }>(
+            "/events",
+            "",
+            undefined,
+            undefined,
+            abort.signal,
+          ),
+        ]);
+        if (gen === generation.current) {
+          setNetwork(n);
+          setEvents(e.events);
+          setAvailable(true);
+          setConnectionError("");
+        }
+      } catch (e) {
+        if (abort.signal.aborted || gen !== generation.current) return;
+        setAvailable(false);
+        setConnectionError(
+          "Connection unavailable. Last-known data may be stale. " +
+            (e instanceof Error ? e.message : ""),
+        );
+      }
+    })();
+    flight.current = task;
+    await task;
+    if (flight.current === task) flight.current = null;
   }, []);
   useEffect(() => {
     if (!enabled) return;
-    const controller = new AbortController();
-    void refresh(controller.signal);
-    const tick = () => {
-      if (!document.hidden) void refresh(controller.signal);
+    let active = true;
+    let timer: ReturnType<typeof setTimeout>;
+    const poll = async () => {
+      if (!document.hidden) await refresh(true);
+      if (active) timer = setTimeout(poll, 5000);
     };
-    const id = setInterval(tick, 5000);
+    void poll();
+    const onVisible = () => {
+      if (!document.hidden) void refresh();
+    };
     const offline = () => {
       generation.current++;
+      controller.current?.abort();
       setAvailable(false);
       setConnectionError(
         "Offline. Response actions are unavailable. No actions are queued.",
       );
     };
     window.addEventListener("offline", offline);
-    window.addEventListener("online", tick);
-    document.addEventListener("visibilitychange", tick);
+    window.addEventListener("online", onVisible);
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
-      controller.abort();
-      clearInterval(id);
+      active = false;
+      clearTimeout(timer);
+      generation.current++;
+      controller.current?.abort();
       window.removeEventListener("offline", offline);
-      window.removeEventListener("online", tick);
-      document.removeEventListener("visibilitychange", tick);
+      window.removeEventListener("online", onVisible);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [enabled, refresh]);
   const act: Act = async (path, role, body, method = "POST") => {
@@ -86,12 +106,12 @@ export function useBackend(enabled: boolean, tokens: Tokens) {
     setMessage("");
     try {
       await request(path, tokens[role], body, method);
-      await refresh();
+      await refresh(true);
       setMessage("Recorded by the backend. Simulation only.");
       return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : "Request failed.");
-      await refresh();
+      await refresh(true);
       return false;
     } finally {
       lock.current = false;

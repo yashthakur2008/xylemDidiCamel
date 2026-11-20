@@ -11,7 +11,10 @@ LeakLens is a student prototype connecting pipe intrusion susceptibility, sustai
 - Failed-sample recovery, explicit operator clearance, audit history and persistent SQLite storage.
 - Tests, real HTTP workflow/restart verification and an installable Python package.
 
-The Lovable frontend is a separate workstream. This repository does **not** yet contain the generated website/app or claim that it is connected to the API.
+- Connected **React website, operations dashboard and mobile crew PWA**, including a risk schematic, pressure traces, sample workflow and audit trail.
+- Production browser acceptance tests against real FastAPI, plus offline-shell and Chromium installability checks.
+
+Open the local website at **http://127.0.0.1:5173**, operations at **/operations**, or the crew app at **/crew** after starting both services. Lovable generation was not completed; the checked-in frontend was implemented and tested locally.
 
 ## Run locally
 
@@ -25,7 +28,16 @@ python3 -m venv .venv
 API documentation: **http://127.0.0.1:8000/docs**. Health: **http://127.0.0.1:8000/health**.
 The local launcher creates random role tokens in `backend/.local-tokens.json` with owner-only permissions. Keep this ignored file private. The application binds only to loopback.
 
-See [backend setup and frontend integration](backend/README.md), [design specification](docs/LEAKLENS-DESIGN.md), and [Lovable iteration prompts](docs/LOVABLE-PASSES.md).
+In a second terminal:
+
+```sh
+cd frontend
+npm ci
+npm run build
+npm run preview -- --port 5173 --strictPort
+```
+
+See [frontend setup and demo walkthrough](frontend/README.md), [backend setup and frontend integration](backend/README.md), [design specification](docs/LEAKLENS-DESIGN.md), and [Lovable iteration prompts](docs/LOVABLE-PASSES.md).
 
 ## Safety and evidence boundaries
 
@@ -35,4 +47,4 @@ Risk weights are transparent demonstration rules, not calibrated probabilities. 
 
 ## Competition
 
-Target: Xylem Global Student Innovation Challenge 2026, **Water Quality**. Division still needs confirmation. Submission requires a project page, slides, a 3–4 minute video and disclosure of outside assistance. Deadline: November 20, 2026, 1 PM Pacific. [Official challenge page](https://xyleminnovationchallenge.bemyapp.com/).
+Target: Xylem Global Student Innovation Challenge 2026, **Water Quality**. Division still needs confirmation. Submission requires a project page, slides, a 3–4 minute video and disclosure of outside assistance. Deadline discrepancy: the supplied official-rules PDF says November 20, 2026, **1 PM Eastern / 10 AM Pacific**; the website previously cited 1 PM Pacific. Use the earlier deadline unless the organizer confirms otherwise. [Official challenge page](https://xyleminnovationchallenge.bemyapp.com/).

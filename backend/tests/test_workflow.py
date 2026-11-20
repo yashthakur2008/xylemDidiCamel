@@ -3,6 +3,8 @@ from test_api import P, TOKENS, auth, client, event, reading
 
 
 def post(c, e, path, body=None, role="operator"):
+    if path == "advisory/approve" and body is None:
+        body = {"expected_draft": e["advisory"]["draft"]}
     return c.post(f"{P}/events/{e['id']}/{path}", json=body or {}, headers=auth(role))
 
 
@@ -26,14 +28,15 @@ def test_notice_edit_approval_and_job_gate(client):
     assert post(client, e, "job/approve", {"crew": "Crew-A"}).status_code == 409
     assert work(client, e, "repair").status_code == 409
     url = f"{P}/events/{e['id']}/advisory"
-    assert client.patch(url, json={"draft": "   "}, headers=auth()).status_code == 422
-    assert client.patch(url, json={"draft": "Simulation notice for operator review."}, headers=auth("crew")).status_code == 403
-    assert client.patch(url, json={"draft": "Simulation notice for operator review."}, headers=auth()).status_code == 200
+    assert client.patch(url, json={"draft": "   ", "expected_draft": e["advisory"]["draft"]}, headers=auth()).status_code == 422
+    assert client.patch(url, json={"draft": "Simulation notice for operator review.", "expected_draft": e["advisory"]["draft"]}, headers=auth("crew")).status_code == 403
+    assert client.patch(url, json={"draft": "Simulation notice for operator review.", "expected_draft": e["advisory"]["draft"]}, headers=auth()).status_code == 200
+    e = client.get(f"{P}/events/{e['id']}").json()
     approved = post(client, e, "advisory/approve")
     assert approved.status_code == 200
     assert approved.json()["advisory"]["delivery"] == "simulated_only"
     assert post(client, e, "advisory/approve").status_code == 409
-    assert client.patch(url, json={"draft": "Edit after approval"}, headers=auth()).status_code == 409
+    assert client.patch(url, json={"draft": "Edit after approval", "expected_draft": e["advisory"]["draft"]}, headers=auth()).status_code == 409
     assert post(client, e, "job/approve", {"crew": "Crew-A"}, "crew").status_code == 403
     assert post(client, e, "job/approve", {"crew": "Crew-A"}).status_code == 200
 
@@ -109,3 +112,65 @@ def test_cors_only_configured_origins(client):
     response = client.options(P + "/readings", headers=headers)
     assert response.status_code == 400
     assert "access-control-allow-origin" not in response.headers
+
+
+def test_stale_review_cannot_approve_or_overwrite_new_advisory(client):
+    e = event(client)
+    base = e['advisory']['draft']
+    url = f"{P}/events/{e['id']}/advisory"
+    changed = client.patch(url, json={'draft': 'SIMULATION ONLY: revised by another operator.', 'expected_draft': base}, headers=auth())
+    assert changed.status_code == 200
+    before = client.get(f"{P}/events/{e['id']}").json()
+    assert client.post(url + '/approve', json={'expected_draft': base}, headers=auth()).status_code == 409
+    assert client.patch(url, json={'draft': 'SIMULATION ONLY: stale overwrite attempt.', 'expected_draft': base}, headers=auth()).status_code == 409
+    assert client.get(f"{P}/events/{e['id']}").json() == before
+    assert client.post(url + '/approve', json={'expected_draft': before['advisory']['draft']}, headers=auth()).status_code == 200
+
+
+@pytest.mark.parametrize("method,suffix", [("PATCH", ""), ("POST", "/approve")])
+@pytest.mark.parametrize("expected", [None, 123, True, [], {}])
+def test_advisory_requires_expected_draft_string(client, method, suffix, expected):
+    e = event(client)
+    url = f"{P}/events/{e['id']}/advisory{suffix}"
+    body = {"draft": "SIMULATION ONLY: revised notice."} if method == "PATCH" else {}
+    before = client.get(f"{P}/events/{e['id']}").json()
+    assert client.request(method, url, json=body, headers=auth()).status_code == 422
+    body["expected_draft"] = expected
+    assert client.request(method, url, json=body, headers=auth()).status_code == 422
+    assert client.get(f"{P}/events/{e['id']}").json() == before
+
+
+@pytest.mark.parametrize("method,suffix", [("PATCH", ""), ("POST", "/approve")])
+@pytest.mark.parametrize("padding", [" ", "\n", "\t"])
+def test_advisory_expected_draft_is_not_trimmed(client, method, suffix, padding):
+    e = event(client)
+    body = {"expected_draft": padding + e["advisory"]["draft"] + padding}
+    if method == "PATCH":
+        body["draft"] = "SIMULATION ONLY: revised notice."
+    before = client.get(f"{P}/events/{e['id']}").json()
+    assert client.request(method, f"{P}/events/{e['id']}/advisory{suffix}",
+                          json=body, headers=auth()).status_code == 409
+    assert client.get(f"{P}/events/{e['id']}").json() == before
+
+
+def test_concurrent_advisory_edits_are_atomic(client):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+
+    e = event(client)
+    url = f"{P}/events/{e['id']}/advisory"
+    barrier = Barrier(2)
+
+    def edit(index):
+        barrier.wait(timeout=5)
+        return client.patch(url, json={
+            "draft": f"SIMULATION ONLY: competing revision {index}.",
+            "expected_draft": e["advisory"]["draft"],
+        }, headers=auth())
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        responses = list(executor.map(edit, range(2)))
+    assert sorted(r.status_code for r in responses) == [200, 409]
+    winner = next(r.json() for r in responses if r.status_code == 200)
+    assert client.get(f"{P}/events/{e['id']}").json() == winner
+    assert [a["action"] for a in winner["audit"]].count("advisory_edited") == 1

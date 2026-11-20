@@ -15,7 +15,11 @@ class Reading(Input):
     observed_at: AwareDatetime
 
 
-class Advisory(Input):
+class AdvisoryReview(Input):
+    expected_draft: Annotated[str, StringConstraints(strip_whitespace=False, strict=True)]
+
+
+class Advisory(AdvisoryReview):
     draft: str = Field(min_length=10, max_length=4000)
 
 

@@ -1,7 +1,7 @@
 # LeakLens connected application specification
 
 Date: 2026-11-19 Pacific
-Status: approach approved in chat; written specification awaiting review.
+Status: written specification approved by user; connected application implemented and acceptance-tested. See ../../FRONTEND-VERIFICATION.md.
 
 ## Outcome and scope
 

@@ -26,9 +26,9 @@ def exercise(base_url, tokens):
         e = call("POST", P + "/demo/scenario", {"segment_id": "CA-001"}, "operator", 201)["event"]
         prefix = f"{P}/events/{e['id']}"
         call("POST", prefix + "/job/approve", {"crew": "Demo-Crew"}, "operator", 409)
-        call("POST", prefix + "/advisory/approve", role="crew", expected=403)
-        call("PATCH", prefix + "/advisory", {"draft": "SIMULATION ONLY: proposed advisory, subject to operator/regulatory review. Not for distribution."}, "operator")
-        assert call("POST", prefix + "/advisory/approve", role="operator")["advisory"]["delivery"] == "simulated_only"
+        call("POST", prefix + "/advisory/approve", {"expected_draft": e["advisory"]["draft"]}, role="crew", expected=403)
+        e = call("PATCH", prefix + "/advisory", {"expected_draft": e["advisory"]["draft"], "draft": "SIMULATION ONLY: proposed advisory, subject to operator/regulatory review. Not for distribution."}, "operator")
+        assert call("POST", prefix + "/advisory/approve", {"expected_draft": e["advisory"]["draft"]}, role="operator")["advisory"]["delivery"] == "simulated_only"
         call("POST", prefix + "/job/approve", {"crew": "Demo-Crew"}, "operator")
         call("POST", prefix + "/work", {"step": "repair"}, "crew")
         call("POST", prefix + "/work", {"step": "flush"}, "crew")

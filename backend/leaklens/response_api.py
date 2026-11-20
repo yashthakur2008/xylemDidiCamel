@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends
 
 from . import events, workflow
-from .models import Advisory, Assignment, Reading, Reset, Sample, Scenario, Work
+from .models import Advisory, AdvisoryReview, Assignment, Reading, Reset, Sample, Scenario, Work
 from .store import initial_state
 
 
@@ -15,8 +15,8 @@ def response_router(store, allow):
         return store.update(lambda s: workflow.edit_advisory(s, event_id, body, actor))
 
     @router.post("/events/{event_id}/advisory/approve")
-    def approve_notice(event_id: str, actor=Depends(allow("operator"))):
-        return store.update(lambda s: workflow.approve_advisory(s, event_id, actor))
+    def approve_notice(event_id: str, body: AdvisoryReview, actor=Depends(allow("operator"))):
+        return store.update(lambda s: workflow.approve_advisory(s, event_id, body, actor))
 
     @router.post("/events/{event_id}/job/approve")
     def approve_job(event_id: str, body: Assignment, actor=Depends(allow("operator"))):

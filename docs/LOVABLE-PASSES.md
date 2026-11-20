@@ -1,6 +1,6 @@
 # Lovable design passes
 
-Status: prepared, not yet submitted. Record actual project URL and observed results after each pass. Do not describe prepared prompts as completed iterations.
+Status: archived draft prompts, not submitted. The connected app is implemented locally. Do not apply the old localStorage/photo instructions below to the current backend-connected app; the connected-app specification supersedes them. Record actual project URL and observed results after each pass. Do not describe prepared prompts as completed iterations.
 
 ## Pass 1: composition and complete demo
 Build LeakLens, a Water Quality student competition prototype, as one React application with a public website, utility operations dashboard and mobile-friendly field crew app. This is NOT a generic water conservation dashboard. It links contamination-intrusion susceptibility at leaking pipes with sustained low-pressure events and human-approved response.
@@ -31,3 +31,8 @@ Refine LeakLens at 1440px, 768px and 390px. No unintended horizontal page scroll
 - Pass 2: not submitted.
 - Pass 3: not submitted.
 - Code export/local integration: not started.
+
+### Connected app delivery update (2026-11-19 Pacific)
+- Desktop Lovable was found signed in earlier. Current background Accessibility inspection exposed only nested groups; deeper inspection timed out after 20 seconds. No reliable background prompt submission was available.
+- No repeated Lovable generation/refinement is claimed. We did not steal focus or mix prompts with the user’s foreground typing.
+- Local implementation completed instead. Actual production screenshots were inspected, an interactive normal-pressure/pressure-loss schematic was added, and desktop/mobile browser acceptance was run. See `FRONTEND-VERIFICATION.md`.

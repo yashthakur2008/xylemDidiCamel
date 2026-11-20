@@ -38,3 +38,7 @@ Verified November 19, 2026 Pacific. Scope is the backend, not the Lovable fronte
 ## Remaining limitations
 
 No frontend integration or frontend visual/accessibility testing, public HTTPS deployment, real user/crew identities, file uploads, Postgres/PostGIS, real sensor/network data, regulatory compliance review, hydraulic simulation or validated intrusion detection. SQLite JSON persistence is for a small demo. Public read endpoints and role-level shared demo credentials are explicitly unsuitable for sensitive utility data.
+
+## Connected frontend concurrency hardening
+
+On 2026-11-19 Pacific, advisory PATCH and approval gained required `expected_draft` content guards checked atomically in SQLite. Stale content returns409 without altering event/audit. Backend suite increased to54 passing tests and the real HTTP/restart acceptance passed again. The connected production frontend suite also passes10 cases. See `FRONTEND-VERIFICATION.md` for integrated evidence. Prior wheel-install evidence above predates this contract change.

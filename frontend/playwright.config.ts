@@ -1,13 +1,12 @@
 import { defineConfig } from "@playwright/test";
 import { randomBytes } from "node:crypto";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
-const dir = mkdtempSync(
-  join(
-    process.env.JCODE_SCRATCH_DIR || process.cwd() + "/test-results",
-    "-leaklens-",
-  ),
-);
+const scratch =
+  process.env.JCODE_SCRATCH_DIR || join(process.cwd(), ".test-artifacts");
+mkdirSync(scratch, { recursive: true });
+process.env.JCODE_SCRATCH_DIR = scratch;
+const dir = mkdtempSync(join(scratch, "leaklens-browser-"));
 for (const role of ["OPERATOR", "CREW", "INGEST"])
   process.env["LEAKLENS_" + role + "_TOKEN"] ||=
     randomBytes(32).toString("hex");

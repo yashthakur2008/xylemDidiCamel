@@ -12,12 +12,19 @@ export function Incident({
   disabled: boolean;
 }) {
   const [draft, setDraft] = useState(event.advisory.draft),
+    [baseDraft, setBaseDraft] = useState(event.advisory.draft),
     [crew, setCrew] = useState("CREW-01"),
     [sample, setSample] = useState(""),
     [result, setResult] = useState("clear");
   useEffect(() => {
-    setDraft(event.advisory.draft);
-  }, [event.id, event.advisory.draft]);
+    if (draft === baseDraft) {
+      setDraft(event.advisory.draft);
+      setBaseDraft(event.advisory.draft);
+    }
+  }, [event.id, event.advisory.draft, draft, baseDraft]);
+  const conflict =
+    event.advisory.draft !== baseDraft ||
+    (event.advisory.approved && draft !== event.advisory.draft);
   const path = `/events/${event.id}`,
     closed = event.status === "closed";
   return (
@@ -50,22 +57,44 @@ export function Incident({
                     rows={4}
                   />
                 </label>
+                {conflict && (
+                  <div className="notice warning">
+                    <p>
+                      Another operator changed or approved this advisory. Your
+                      local text is preserved. Review the server version before
+                      saving or approving.
+                    </p>
+                    <p>Server draft: {event.advisory.draft}</p>
+                    <button
+                      onClick={() => {
+                        setDraft(event.advisory.draft);
+                        setBaseDraft(event.advisory.draft);
+                      }}
+                    >
+                      Discard local edits and load server draft
+                    </button>
+                  </div>
+                )}
                 <div className="actions">
                   <button
                     disabled={
                       disabled ||
                       closed ||
                       event.advisory.approved ||
+                      conflict ||
                       draft === event.advisory.draft
                     }
-                    onClick={() =>
-                      void act(
-                        path + "/advisory",
-                        "operator",
-                        { draft },
-                        "PATCH",
+                    onClick={async () => {
+                      if (
+                        await act(
+                          path + "/advisory",
+                          "operator",
+                          { draft, expected_draft: baseDraft },
+                          "PATCH",
+                        )
                       )
-                    }
+                        setBaseDraft(draft);
+                    }}
                   >
                     Save draft
                   </button>
@@ -75,10 +104,13 @@ export function Incident({
                       disabled ||
                       closed ||
                       event.advisory.approved ||
+                      conflict ||
                       draft !== event.advisory.draft
                     }
                     onClick={() =>
-                      void act(path + "/advisory/approve", "operator")
+                      void act(path + "/advisory/approve", "operator", {
+                        expected_draft: baseDraft,
+                      })
                     }
                   >
                     {event.advisory.approved

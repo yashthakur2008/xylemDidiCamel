@@ -1,7 +1,7 @@
 # LeakLens: approved demo scope and design specification
 
 Date: 2026-11-19 (Pacific)
-Status: chat scope approved. Backend implemented separately at user request; frontend integration remains pending. See `../backend/README.md` for actual implementation boundaries.
+Status: backend and connected frontend implemented. See `superpowers/specs/2026-11-19-connected-app-design.md` for the superseding connected-app contract, `../frontend/README.md` for local use, and verification reports for actual acceptance evidence.
 
 ## Goal
 A Water Quality competition demo connecting intrusion-prone pipe segments, sustained pressure-loss detection and human-approved incident response. Deliver a public website, utility dashboard and responsive field-crew experience. This is a student prototype, not an operational utility safety system.
@@ -20,7 +20,7 @@ Engineering editorial rather than generic SaaS: warm paper background, ink navy 
 
 Website: asymmetrical editorial hero and technical illustration; pressure/intrusion explanation; three-stage product walkthrough; honest evidence/limitations; pilot approach; clear demo CTA.
 Operations: dense but readable utility workspace. Network map dominates, with a risk-ranked segment list, selected-segment explanation, pressure trace, stale-data warning and active incident timeline.
-Crew: large readable task steps, explicit location/segment IDs, approved job status, repair/flushing checklist, sample IDs/results and photo attachment. Equipment steps are fictional instructions, not executable controls.
+Crew: large readable task steps, explicit location/segment IDs, approved job status, repair/flushing checklist, sample IDs/results and sample evidence. Photo uploads remain future scope. Equipment steps are fictional instructions, not executable controls.
 
 ## Demo flow
 1. Normal telemetry and explainable segment ranking.
@@ -31,7 +31,7 @@ Crew: large readable task steps, explicit location/segment IDs, approved job sta
 6. Operator approves simulated clearance. Event timeline retains all decisions.
 7. Reset clears demo state and returns to a reproducible starting point.
 
-Persist versioned demo state locally, recover safely from corrupted storage, and identify local-only persistence. Reject duplicate sample IDs, missing fields and out-of-order transitions. Handle stale/missing pressure without claiming normal service. No secrets, customer data or real utility topology.
+Persist demo incidents in backend SQLite, never in a parallel browser database. Recover safely from corrupt storage and identify demo-only persistence. Reject duplicate sample IDs, missing fields and out-of-order transitions. Handle stale/missing pressure without claiming normal service. No secrets, customer data or real utility topology.
 
 ## Lovable iteration protocol
 1. Generate complete composition and routes from this specification.
@@ -55,4 +55,4 @@ Record prompts and observed results. Do not claim a pass occurred merely because
 Deadline discrepancy: the supplied official-rules PDF states November 20, 2026, 1 PM Eastern (10 AM Pacific); the previously cited website time was 1 PM Pacific. Plan for the earlier deadline unless the organizer confirms otherwise. Required: project page, slides, 3–4 minute video. Judging: Impact, Challenge Fit/Feasibility, Innovation. Confirm High School/University division before final submission. Document outside assistance and verify source citations. Do not invent measured health benefits, validated detection rates, pilot partners or costs.
 
 ## Deployment
-Prefer a static deployable demo with no credentials or external runtime dependencies required for the judge walkthrough. Real backend, RBAC, sensor ingestion, PostGIS and hydraulic simulation remain explicitly future scope unless implemented. Public deployment and GitHub visibility must be checked before publishing.
+The connected app requires the running FastAPI backend. The static website can render independently, but actions cannot. Role-token demo authorization and simulated reading ingestion are implemented. Production identity, sensor adapters, PostGIS and hydraulic simulation remain future scope. Public deployment and GitHub visibility must be checked before publishing.

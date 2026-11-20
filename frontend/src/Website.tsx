@@ -1,4 +1,5 @@
-export function PipeDiagram() {
+import { useState } from "react";
+export function PipeDiagram({ low }: { low: boolean }) {
   return (
     <svg
       className="pipe-diagram"
@@ -50,7 +51,7 @@ export function PipeDiagram() {
         strokeWidth="3"
       />
       <path
-        d="M290 155V211M292 353V279"
+        d={low ? "M290 155V211M292 353V279" : "M290 211V155M292 279V353"}
         stroke="#a44d32"
         strokeWidth="3"
         markerEnd="url(#arrow)"
@@ -62,7 +63,9 @@ export function PipeDiagram() {
         POTENTIAL ENTRY POINT
       </text>
       <text x="35" y="422">
-        LOW PRESSURE + AN OPENING + EXPOSURE
+        {low
+          ? "POTENTIAL INWARD FLOW / PRESSURE LOSS"
+          : "OUTWARD LEAKAGE / NORMAL PRESSURE"}
       </text>
       <text x="35" y="449" className="diagram-note">
         Conceptual schematic · not to scale
@@ -71,6 +74,7 @@ export function PipeDiagram() {
   );
 }
 export function Website() {
+  const [low, setLow] = useState(true);
   return (
     <main className="website">
       <section className="hero">
@@ -100,7 +104,15 @@ export function Website() {
           </p>
         </div>
         <figure>
-          <PipeDiagram />
+          <div className="diagram-switch" aria-label="Pressure comparison">
+            <button aria-pressed={!low} onClick={() => setLow(false)}>
+              Normal pressure
+            </button>
+            <button aria-pressed={low} onClick={() => setLow(true)}>
+              Pressure loss
+            </button>
+          </div>
+          <PipeDiagram low={low} />
           <figcaption>
             <span>01 / THE MECHANISM</span>
             <strong>

@@ -13,14 +13,18 @@ def open_event(state, ident):
 
 def edit_advisory(state, ident, body, actor):
     event = open_event(state, ident)
+    require(body.expected_draft == event["advisory"]["draft"],
+            "Advisory draft changed; review the current draft before retrying")
     require(not event["advisory"]["approved"], "Approved advisory cannot be edited")
     event["advisory"]["draft"] = body.draft
     audit(event, "advisory_edited", actor)
     return event
 
 
-def approve_advisory(state, ident, actor):
+def approve_advisory(state, ident, body, actor):
     event = open_event(state, ident)
+    require(body.expected_draft == event["advisory"]["draft"],
+            "Advisory draft changed; review the current draft before retrying")
     require(not event["advisory"]["approved"], "Advisory already approved")
     event["advisory"].update(approved=True, approved_at=now_iso(), delivery="simulated_only")
     event["status"] = "advisory_active"

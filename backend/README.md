@@ -32,8 +32,8 @@ Prefix: `/api/v1`.
 | GET `/events` | public | `{simulated, events}` |
 | GET `/events/{id}` | public | complete event including advisory, job, samples, policy snapshot and audit |
 | POST `/readings` | ingest | `{segment_id, pressure_psi, observed_at}`; 201 `{simulated, reading, event}`; `event` may be null |
-| PATCH `/events/{id}/advisory` | operator | `{draft}`; editable only before approval |
-| POST `/events/{id}/advisory/approve` | operator | no body; logs simulated delivery only |
+| PATCH `/events/{id}/advisory` | operator | `{draft, expected_draft}`; editable only before approval |
+| POST `/events/{id}/advisory/approve` | operator | `{expected_draft}`; logs simulated delivery only |
 | POST `/events/{id}/job/approve` | operator | `{crew}`; requires approved advisory |
 | POST `/events/{id}/work` | crew | `{step: "repair"}` then `{step: "flush"}` |
 | POST `/events/{id}/samples` | crew | `{sample_id, result: "clear" \| "failed"}` |
@@ -42,6 +42,8 @@ Prefix: `/api/v1`.
 | POST `/demo/reset` | operator | `{confirm: "RESET DEMO"}`; deletes all demo incidents, readings and audit history |
 
 Event mutations return the complete updated event. IDs are generated UUIDs; segments are `CA-001`, `CA-002`, `CA-003`. Names and coordinates are fictional fixtures, not actual utility pipe locations. Sample IDs and crew names allow ASCII letters, numbers, `_` and `-`, up to 80 characters. Sample IDs are unique within an event. Advisory text is plain text, 10–4000 trimmed characters; render it as text, never raw HTML.
+
+Both advisory endpoints require a string `expected_draft` containing the exact draft the operator reviewed. It is compared without trimming or normalization to the current draft inside the same SQLite write transaction as the mutation. A mismatch returns 409 without changing the event or audit. Missing or non-string values return 422. This is a content guard, not a revision counter. After editing, review the returned draft before approving it. On conflict, fetch and review the current draft rather than automatically retrying with fresh text.
 
 Errors: 401 missing/invalid token, 403 wrong role, 404 unknown event/segment, 409 invalid transition/duplicate/out-of-order action, 422 invalid payload. `{detail}` is either a message or a validation list (`loc`, `msg`, `type`). Never infer success solely from a resolved fetch promise.
 
@@ -74,10 +76,11 @@ Sample entry is an operator/crew record of a result, not a lab integration. Samp
 
 ```js
 // token is entered by the demo operator at runtime, never embedded in a build.
-async function approveAdvisory(apiBase, eventId, token) {
+async function approveAdvisory(apiBase, eventId, reviewedDraft, token) {
   const response = await fetch(`${apiBase}/events/${eventId}/advisory/approve`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ expected_draft: reviewedDraft }),
   });
   const body = await response.json();
   if (!response.ok) throw new Error(typeof body.detail === 'string' ? body.detail : 'Invalid request');
