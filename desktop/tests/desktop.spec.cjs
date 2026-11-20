@@ -131,12 +131,17 @@ test("offline desktop completes response and persists after packaged restart", a
       page.getByText("Incident closed", { exact: true }),
     ).toBeVisible();
     const origin = new URL(page.url()).origin;
+    const childPids = await app.evaluate(() => process._getActiveHandles()
+      .filter(handle => handle.constructor.name === "ChildProcess")
+      .map(handle => handle.pid));
+    expect(childPids.length).toBeGreaterThan(0);
     await page.screenshot({
       path: path.join(desktop, "test-results", "desktop-closed.png"),
       fullPage: true,
     });
     await app.close();
     app = undefined;
+    for (const pid of childPids) await expect.poll(() => dead(pid)).toBe(true);
     await expect
       .poll(async () => {
         try {
