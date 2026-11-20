@@ -1,4 +1,5 @@
 import { useEffect, useState, type MouseEvent } from "react";
+import { AppChrome } from "./AppChrome";
 import { isDesktop } from "./desktop";
 import { Evaluation } from "./Evaluation";
 import { Website } from "./Website";
@@ -7,6 +8,9 @@ import { Incident } from "./Incident";
 import { useBackend } from "./useBackend";
 import { type Tokens, type Role, human } from "./api";
 export default function App() {
+  const [intro, setIntro] = useState(
+    () => !matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
   const [path, setPath] = useState(location.pathname),
     [tokens, setTokens] = useState<Tokens>({
       operator: "",
@@ -99,39 +103,38 @@ export default function App() {
     window.scrollTo(0, 0);
   }
   return (
-    <div onClick={navigate}>
+    <div
+      onClick={navigate}
+      className={path === "/" ? undefined : "app-shell"}
+      data-desktop={isDesktop ? "true" : undefined}
+      data-intro={intro ? "playing" : "complete"}
+    >
       <a href="#main" className="skip-link">
         Skip to content
       </a>
-      <header className="site-header">
-        <a className="brand" href={isDesktop ? "/operations" : "/"}>
-          <span className="brand-icon">◉</span> Confluence
-          <span className="brand-tag">DISTRIBUTION INTELLIGENCE</span>
-        </a>
-        <nav aria-label="Main navigation">
-          {!isDesktop && (
-            <a href="/" aria-current={path === "/" ? "page" : undefined}>
-              Overview
+      {path !== "/" ? (
+        <AppChrome path={path} intro={intro} setIntro={setIntro} />
+      ) : (
+        <header className="site-header">
+          <a className="brand" href={isDesktop ? "/operations" : "/"}>
+            <span className="brand-icon">◉</span> Confluence
+            <span className="brand-tag">DISTRIBUTION INTELLIGENCE</span>
+          </a>
+          <nav aria-label="Main navigation">
+            {!isDesktop && (
+              <a href="/" aria-current={path === "/" ? "page" : undefined}>
+                Overview
+              </a>
+            )}
+            <a href="/operations">Operations</a>
+            <a href="/evaluation">Test mode</a>
+            <a href="/crew" aria-current={crewMode ? "page" : undefined}>
+              {isDesktop ? "Crew app" : "Crew app ↗"}
             </a>
-          )}
-          <a
-            href="/operations"
-            aria-current={path === "/operations" ? "page" : undefined}
-          >
-            Operations
-          </a>
-          <a
-            href="/evaluation"
-            aria-current={path === "/evaluation" ? "page" : undefined}
-          >
-            Test mode
-          </a>
-          <a href="/crew" aria-current={crewMode ? "page" : undefined}>
-            {isDesktop ? "Crew app" : "Crew app ↗"}
-          </a>
-        </nav>
-      </header>
-      <div id="main">
+          </nav>
+        </header>
+      )}
+      <div id="main" tabIndex={-1} inert={path !== "/" && intro}>
         {path === "/" ? (
           <Website />
         ) : path === "/evaluation" ? (
@@ -148,8 +151,8 @@ export default function App() {
                 <h1>{crewMode ? "Field notebook" : "Network intelligence"}</h1>
                 <p className="muted">
                   {crewMode
-                    ? "The right job. The complete record."
-                    : "Find the vulnerable segment. Follow the response."}
+                    ? "Record field work and sampling for approved incidents."
+                    : "Review pressure evidence and coordinate an operator-approved response."}
                 </p>
               </div>
               <span className="badge">SIMULATION ONLY</span>
@@ -209,18 +212,9 @@ export default function App() {
             )}
             {!crewMode && api.network && (
               <>
-                <NetworkView
-                  segments={api.network.segments}
-                  selected={selected}
-                  onSelect={(s) => {
-                    setSelected(s);
-                    setEventId("");
-                  }}
-                />
-                {segment && <SegmentDetail segment={segment} event={event} />}
                 <section className="demo-controls">
                   <div>
-                    <p className="eyebrow">DEMO TELEMETRY / {selected}</p>
+                    <p className="eyebrow">Scenario controls · {selected}</p>
                     <p className="small muted">
                       Generate a sustained drop, then submit a 45 psi recovery
                       reading. These are fictional observations, not equipment
@@ -253,6 +247,16 @@ export default function App() {
                     </button>
                   </div>
                 </section>
+                <NetworkView
+                  segments={api.network.segments}
+                  selected={selected}
+                  onSelect={(s) => {
+                    setSelected(s);
+                    setEventId("");
+                  }}
+                />
+                {segment && <SegmentDetail segment={segment} event={event} />}
+
               </>
             )}
             {!api.network && (

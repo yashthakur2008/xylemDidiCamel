@@ -67,7 +67,7 @@ export function Incident({
           {!crewMode ? (
             <>
               <section className="workflow-step">
-                <p className="eyebrow">01 / ADVISORY REVIEW</p>
+                <p className="eyebrow">ADVISORY REVIEW</p>
                 <label>
                   Advisory draft
                   <textarea
@@ -149,7 +149,7 @@ export function Incident({
                 onDirty={setPlanDirty}
               />
               <section className="workflow-step">
-                <p className="eyebrow">02 / CREW DISPATCH</p>
+                <p className="eyebrow">CREW DISPATCH</p>
                 <label>
                   Crew assignment
                   <input
@@ -179,7 +179,7 @@ export function Incident({
                 </button>
               </section>
               <section className="workflow-step">
-                <p className="eyebrow">04 / OPERATOR SIGN-OFF</p>
+                <p className="eyebrow">OPERATOR SIGN-OFF</p>
                 <ul className="small outstanding">
                   <li>
                     {event.job.approved
@@ -282,7 +282,7 @@ export function Incident({
                 )}
               </section>
               <section className="workflow-step">
-                <p className="eyebrow">03 / SAMPLING NOTEBOOK</p>
+                <p className="eyebrow">SAMPLING NOTEBOOK</p>
                 {event.sampling_plan.map((p) => (
                   <p className="small" key={p}>
                     {p}

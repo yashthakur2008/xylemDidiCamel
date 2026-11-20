@@ -50,9 +50,10 @@ export function Evaluation({
       <div className="workspace-heading">
         <div>
           <p className="eyebrow">CONFLUENCE / OPERATOR EVALUATION</p>
-          <h1>From signal to a reviewable response.</h1>
+          <h1>Operator evaluation</h1>
           <p className="muted">
-            One incident. Visible uncertainty. A record you can evaluate.
+            Run a simulated incident, prepare a response and review the saved
+            evidence.
           </p>
         </div>
         <span className="badge">SIMULATED DATA</span>
@@ -77,7 +78,7 @@ export function Evaluation({
       {!run ? (
         <>
           <section className="trial-setup">
-            <p className="eyebrow">01 / FREEZE THE METHOD</p>
+            <p className="eyebrow">FREEZE THE METHOD</p>
             <h2>Prepare a repeatable trial</h2>
             <p>
               Runs use separate records. Resetting a test preserves earlier
@@ -220,7 +221,7 @@ export function Evaluation({
           )}
           <section className="decision-brief">
             <div>
-              <p className="eyebrow">02 / OPERATOR DECISION</p>
+              <p className="eyebrow">OPERATOR DECISION</p>
               <h2>
                 {run.event
                   ? "Sustained pressure loss"
@@ -250,7 +251,7 @@ export function Evaluation({
           </section>
           {segment && <SegmentDetail segment={segment} event={run.event} />}
           <section className="trial-response">
-            <p className="eyebrow">03 / INVESTIGATE BEFORE ACTING</p>
+            <p className="eyebrow">INVESTIGATE BEFORE ACTING</p>
             <label htmlFor="trial-notes">
               Investigation and remaining uncertainty
             </label>
