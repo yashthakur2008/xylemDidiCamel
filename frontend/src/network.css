@@ -120,12 +120,23 @@
   text-align: center;
   pointer-events: none;
   box-shadow: 0 3px 10px #244a4910;
+  animation: network-popup 2.2s ease-in-out both;
 }
 .refined-network .sensor-popup[data-segment="CA-003"] {
   transform: translate(-75%, -100%);
 }
 .refined-network .network-sensor[data-scanning="true"] .sensor-face {
   animation: network-scan 0.8s ease-out;
+}
+@keyframes network-popup {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  12%,
+  82% {
+    opacity: 1;
+  }
 }
 @keyframes network-scan {
   50% {
@@ -150,6 +161,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .refined-network .pipe-flow,
+  .refined-network .sensor-popup,
   .refined-network .network-sensor[data-scanning="true"] .sensor-face {
     animation: none;
   }

@@ -95,6 +95,12 @@ test("simulated activity is staggered, non-mutating and stops offscreen", async 
       .locator(".sensor-popup")
       .evaluate((el) => parseFloat(getComputedStyle(el).fontSize)),
   ).toBeGreaterThanOrEqual(11);
+  expect(
+    await page.locator(".sensor-popup").evaluate((el) => ({
+      name: getComputedStyle(el).animationName,
+      duration: getComputedStyle(el).animationDuration,
+    })),
+  ).toEqual({ name: "network-popup", duration: "2.2s" });
   await expect(page.locator(".segment[aria-pressed=true]")).toHaveText(
     selected!,
   );
@@ -154,9 +160,7 @@ test("contextual simulation stays legible inside the mobile network", async ({
   expect(
     await popup.evaluate((el) => parseFloat(getComputedStyle(el).fontSize)),
   ).toBeGreaterThanOrEqual(11);
-  await page
-    .locator(".network-panel")
-    .screenshot({
-      path: `${process.env.JCODE_SCRATCH_DIR}/network-mobile-activity.png`,
-    });
+  await page.locator(".network-panel").screenshot({
+    path: `${process.env.JCODE_SCRATCH_DIR}/network-mobile-activity.png`,
+  });
 });
