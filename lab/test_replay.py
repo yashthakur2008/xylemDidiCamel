@@ -117,6 +117,68 @@ class ReplayTests(unittest.TestCase):
             self.assertFalse(result['results'][0]['expectation_match'])
             self.assertEqual(result['provenance']['expected_sha256'], hashlib.sha256(path.read_bytes()).hexdigest())
 
+    def test_derived_csv_neutralizes_formulas_but_raw_and_json_preserve_labels(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / 'formulas.csv'
+            labels = ['=1+1', '+1+1', '-1+1', '@SUM(1)', 'normal']
+            with source.open('w', newline='') as stream:
+                writer = csv.writer(stream)
+                writer.writerow(replay.COLUMNS)
+                for label in labels:
+                    writer.writerow([label, label, 'CA-001', 0, 45, 'observed', 'synthetic'])
+            raw = source.read_bytes()
+            output = Path(directory) / 'run'
+            code = replay.main([str(source), '--out', str(output), '--evidence-kind',
+                                'synthetic', '--source-note', 'formula regression'])
+            self.assertEqual(code, 0)
+            self.assertEqual((output / 'raw.csv').read_bytes(), raw)
+            result = json.loads((output / 'results.json').read_text())
+            self.assertEqual([r['trace_id'] for r in result['results']], labels)
+            self.assertEqual(result['provenance']['raw_sha256'], hashlib.sha256(raw).hexdigest())
+            with (output / 'results.csv').open() as stream:
+                exported = list(csv.DictReader(stream))
+            for row, label in zip(exported, labels):
+                expected = "'" + label if label[0] in '=+-@' else label
+                self.assertEqual(row['trace_id'], expected)
+                self.assertEqual(row['scenario'], expected)
+
+    def test_malformed_quoting_is_cli_exit_two_without_artifacts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            for index, ending in enumerate(['"unterminated', '"closed"unexpected']):
+                with self.subTest(ending=ending):
+                    source = Path(directory) / f'bad-{index}.csv'
+                    source.write_text(','.join(replay.COLUMNS) + '\n' +
+                                      'x,test,CA-001,0,45,observed,' + ending + '\n')
+                    output = Path(directory) / f'run-{index}'
+                    run = subprocess.run([sys.executable, '-m', 'lab.replay', str(source),
+                                          '--out', str(output), '--evidence-kind', 'synthetic',
+                                          '--source-note', 'malformed regression'], capture_output=True, text=True)
+                    self.assertEqual(run.returncode, 2, run.stderr)
+                    self.assertIn('Replay failed:', run.stderr)
+                    self.assertNotIn('Traceback', run.stderr)
+                    self.assertFalse(output.exists())
+
+    def test_chart_breaks_gaps_over_thirty_seconds(self):
+        for gap in (30, 31):
+            with self.subTest(gap=gap):
+                raw = (','.join(replay.COLUMNS) + '\n' +
+                       'x,test,CA-001,0,12,observed,synthetic\n' +
+                       f'x,test,CA-001,{gap},12,observed,synthetic\n').encode()
+                result = replay.analyze_bytes(raw, evidence_kind='synthetic', source_note='gap regression')
+                svg = replay.chart(result)
+                root = ET.fromstring(svg)
+                lines = [p for p in root.iter('{http://www.w3.org/2000/svg}path')
+                         if p.get('stroke') == '#147d92']
+                self.assertEqual(len(lines), 1 if gap == 30 else 0)
+                self.assertEqual('Gap 31s' in svg, gap == 31)
+                self.assertEqual('continuity reset' in svg, gap == 31)
+
+    def test_provenance_hashes_analysis_and_protocol(self):
+        result = replay.analyze(FIXTURE, EXPECTED)
+        for name in ('replay.py', 'PROTOCOL.md'):
+            self.assertEqual(result['provenance']['analysis_source_sha256'][name],
+                             hashlib.sha256((FIXTURE.parent.parent / name).read_bytes()).hexdigest())
+
     def test_cli_artifacts_preserve_raw_and_do_not_overwrite(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / 'run'

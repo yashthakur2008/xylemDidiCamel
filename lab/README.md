@@ -50,6 +50,10 @@ Exact UTF-8 header (UTF-8 BOM accepted):
 trace_id,scenario,segment_id,elapsed_s,pressure_psi,sample_status,source_id
 ```
 
+The standard-library CSV parser runs in strict mode. Unterminated quoted fields
+or unexpected text after a closing quote fail with exit 2 before artifacts are
+created. Correctly quoted fields containing commas remain supported.
+
 * Each `trace_id` is an independent run with an empty in-memory state. Its
   `scenario` is constant. Different segments share only that trace's state.
 * `segment_id` must be a current fictional ID: `CA-001`, `CA-002`, `CA-003`.
@@ -110,15 +114,25 @@ A new `--out` directory is required. Existing paths are never overwritten.
 | `raw.csv` | Byte-for-byte preserved input, including line endings |
 | `expected.json` | Byte-for-byte frozen expectations, if supplied |
 | `results.json` | Schema version 1, policy, per-condition counts/times, parsed points, provenance |
-| `results.csv` | Same per trace/segment summary, time arrays encoded as JSON cells |
-| `chart.svg` | Standalone annotated pressure chart with threshold, alerts/low origins, missing markers and broken lines |
+| `results.csv` | Per trace/segment summary, time arrays as JSON cells, formula-like text prefixed with an apostrophe |
+| `chart.svg` | Annotated pressure chart with threshold, alerts/low origins, missing markers and broken lines at missing rows or observed gaps >30 s |
 
 Provenance records SHA-256 of raw and expected files and the backend events,
-network and models source files, source note, evidence kind, analysis UTC and
+network and models source files, plus `lab/replay.py` and `lab/PROTOCOL.md`.
+It also records source note, evidence kind, analysis UTC and
 per-trace rebase origins. Hashes establish content identity, not authenticity or
 proof that expectations were registered before acquisition. Preserve the signed
 or timestamped protocol separately. Chart connecting lines are visual guides,
-not inferred readings or evidence of continuity between samples.
+not inferred readings or evidence of continuity between samples. Observed gaps
+strictly greater than 30 seconds are annotated as continuity resets, including
+when an explicit missing row lies between the observations.
+
+For spreadsheet safety, derived CSV text beginning with `=`, `+`, `-` or `@`
+(after leading whitespace) gets an apostrophe prefix. JSON keeps the analyzed
+labels unchanged and is the canonical machine-readable summary. `raw.csv` is
+always byte-exact, **not spreadsheet-sanitized**. Inspect untrusted raw CSV in a
+plain-text editor or import it explicitly as text, not by opening it as a
+spreadsheet with automatic formula interpretation.
 
 Exit **0**: analysis succeeded (all supplied expectations match).
 Exit **1**: artifacts written but one or more expected outcomes mismatched.

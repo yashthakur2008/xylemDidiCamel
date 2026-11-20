@@ -28,8 +28,17 @@ def sha(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def csv_cell(value):
+    """Neutralize formula prefixes in derived CSV only, not source/JSON labels."""
+    if isinstance(value, list):
+        value = json.dumps(value)
+    if isinstance(value, str) and value.lstrip().startswith(('=', '+', '-', '@')):
+        return "'" + value
+    return value
+
+
 def parse(raw):
-    reader = csv.DictReader(io.StringIO(raw.decode('utf-8-sig')))
+    reader = csv.DictReader(io.StringIO(raw.decode('utf-8-sig')), strict=True)
     if reader.fieldnames != COLUMNS:
         raise ValueError('CSV header must be exactly: ' + ','.join(COLUMNS))
     rows, previous, scenarios = [], {}, {}
@@ -138,6 +147,8 @@ def analyze_bytes(raw, expected_raw=None, *, evidence_kind, source_note):
                            'rebase_origin_utc_by_trace': bases, 'max_elapsed_s': MAX_ELAPSED,
                            'backend_source_sha256': {name: sha((BACKEND / 'leaklens' / name).read_bytes())
                                                      for name in ('events.py', 'network.py', 'models.py')},
+                           'analysis_source_sha256': {name: sha((Path(__file__).parent / name).read_bytes())
+                                                      for name in ('replay.py', 'PROTOCOL.md')},
                            'timing_contract': 'Detection times are triggering sample elapsed_s, NOT wall-clock latency; historical replay does not test original freshness.'}}
 
 
@@ -168,6 +179,7 @@ def chart(result):
                     f'<text x="400" y="{top+195}">elapsed seconds</text>',
                     f'<text x="830" y="{top+195}">{xmax:g}</text>'])
         previous = None
+        previous_observed_s = None
         for point in points:
             px = x(point['elapsed_s'])
             psi = point['pressure_psi']
@@ -176,10 +188,16 @@ def chart(result):
                 previous = None
                 continue
             py = y(psi)
-            if previous:
+            gap = None if previous_observed_s is None else point['elapsed_s'] - previous_observed_s
+            continuity_reset = gap is not None and gap > POLICY['maximum_reading_gap_seconds']
+            if continuity_reset:
+                label_x = min(x((previous_observed_s + point['elapsed_s']) / 2), 650)
+                out.append(f'<text class="small" x="{label_x}" y="{top+215}" fill="#a60">Gap {gap:g}s: continuity reset</text>')
+            if previous and not continuity_reset:
                 out.append(f'<path d="M{previous[0]} {previous[1]} L{px} {py}" stroke="#147d92" fill="none"/>')
             out.append(f'<circle cx="{px}" cy="{py}" r="3" fill="#147d92"><title>t={point["elapsed_s"]:g}, {psi:g} psi</title></circle>')
             previous = (px, py)
+            previous_observed_s = point['elapsed_s']
         for detection, low in zip(summary['detection_elapsed_s'], summary['low_since_elapsed_s']):
             out.append(f'<path d="M{x(detection)} {top+25} V{top+155}" stroke="#c33" stroke-dasharray="3 3"/>')
             out.append(f'<text x="{min(x(detection)+5, 650)}" y="{top+20}" fill="#b22">Alert t={detection:g}, low since t={low:g}</text>')
@@ -209,11 +227,11 @@ def main(argv=None):
             writer = csv.DictWriter(stream, fieldnames=list(result['results'][0]))
             writer.writeheader()
             for row in result['results']:
-                writer.writerow({k: json.dumps(v) if isinstance(v, list) else v for k, v in row.items()})
+                writer.writerow({k: csv_cell(v) for k, v in row.items()})
         (args.out / 'chart.svg').write_text(chart(result), encoding='utf-8')
         print(f'{len(result["results"])} conditions analyzed -> {args.out}')
         return 1 if any(r['expectation_match'] is False for r in result['results']) else 0
-    except (ValueError, KeyError, TypeError, OSError, events.HTTPException) as exc:
+    except (ValueError, KeyError, TypeError, OSError, csv.Error, events.HTTPException) as exc:
         parser.exit(2, f'Replay failed: {exc}\n')
 
 
