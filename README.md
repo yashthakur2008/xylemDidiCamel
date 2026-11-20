@@ -4,6 +4,12 @@
 
 LeakLens is a student prototype connecting pipe intrusion susceptibility, sustained pressure-loss detection and human-approved incident response. Water savings are a secondary benefit, not the central challenge claim.
 
+## Desktop application
+
+LeakLens now has a standalone **macOS and Windows desktop app** with its own window, bundled backend, automatic local access, and persistent offline data. No browser, Python installation, or terminal setup is required for installer users. The landing page remains hosted on Lovable.
+
+See [desktop installation and build instructions](desktop/README.md) and [release downloads](https://github.com/yashthakur2008/xylemDidiCamel/releases). Builds are **unsigned student demos**, not notarized or App Store releases. Each installation is independent, with no shared cloud synchronization.
+
 ## What exists
 
 - Working **FastAPI backend** with a fictional California-style network, explainable risk scores and bounded pressure history.
