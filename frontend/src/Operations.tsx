@@ -1,4 +1,37 @@
+import { useEffect, useId, useRef, useState } from "react";
+import "./network.css";
 import { type Segment, type IncidentData, time } from "./api";
+// One geometry per branch: every pipe layer, including water, uses it.
+const branches = [
+  {
+    id: "CA-001",
+    path: "M76 270 L196 338 L330 260 L246 212 L370 140",
+    x: 246,
+    y: 212,
+    risk: "higher",
+    activity: "pressure check",
+    pause: 7000,
+  },
+  {
+    id: "CA-002",
+    path: "M370 140 L490 210 L418 252 L574 342 L666 288",
+    x: 574,
+    y: 342,
+    risk: "moderate",
+    activity: "upstream scan",
+    pause: 11000,
+  },
+  {
+    id: "CA-003",
+    path: "M370 140 L452 92 L616 186 L704 135",
+    x: 616,
+    y: 186,
+    risk: "lower",
+    activity: "sample review",
+    pause: 9000,
+  },
+];
+
 export function NetworkView({
   segments,
   selected,
@@ -8,96 +41,188 @@ export function NetworkView({
   selected: string;
   onSelect: (s: string) => void;
 }) {
+  const prefix = useId();
+  const panel = useRef<HTMLElement>(null);
+  const [moving, setMoving] = useState(false);
+  const [scanningSensor, setScanningSensor] = useState<number | null>(null);
+  const [activeSensor, setActiveSensor] = useState<number | null>(null);
+
+  useEffect(() => {
+    const preference = matchMedia("(prefers-reduced-motion: reduce)");
+    let inView = false;
+    const update = () =>
+      setMoving(inView && !document.hidden && !preference.matches);
+    const observer = new IntersectionObserver(([entry]) => {
+      inView = entry.isIntersecting;
+      update();
+    });
+    if (panel.current) observer.observe(panel.current);
+    document.addEventListener("visibilitychange", update);
+    preference.addEventListener("change", update);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", update);
+      preference.removeEventListener("change", update);
+    };
+  }, []);
+
+  useEffect(() => {
+    setActiveSensor(null);
+    setScanningSensor(null);
+    if (!moving) return;
+    let index = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    const show = () => {
+      setScanningSensor(index);
+      timer = setTimeout(() => {
+        setScanningSensor(null);
+        setActiveSensor(index);
+        const pause = branches[index].pause;
+        index = (index + 1) % branches.length;
+        timer = setTimeout(() => {
+          setActiveSensor(null);
+          timer = setTimeout(show, pause);
+        }, 2200);
+      }, 800);
+    };
+    timer = setTimeout(show, 3500);
+    return () => clearTimeout(timer);
+  }, [moving]);
+
   return (
-    <div className="network-layout">
-      <section className="network-panel">
+    <div className="network-layout refined-network">
+      <section
+        className="network-panel"
+        ref={panel}
+        data-motion={moving ? "running" : "paused"}
+      >
         <div className="panel-heading">
-          <span className="eyebrow">01 / NETWORK SCHEMATIC</span>
+          <span className="eyebrow">NETWORK SCHEMATIC</span>
           <span className="small">Fictional · not to scale</span>
         </div>
-        <svg
-          viewBox="0 0 700 390"
-          className="network-map"
-          role="img"
-          aria-label="Fictional network with three risk-ranked segments. Select a segment from the adjacent list."
-        >
-          <defs>
-            <pattern
-              id="grid"
-              width="25"
-              height="25"
-              patternUnits="userSpaceOnUse"
-            >
-              <path
-                d="M25 0H0V25"
-                fill="none"
-                stroke="#dce2d7"
-                strokeWidth=".6"
-              />
-            </pattern>
-          </defs>
-          <rect width="700" height="390" fill="url(#grid)" />
-          <path
-            d="M0 300Q170 150 330 310T700 270"
-            stroke="#d4e3e4"
-            strokeWidth="55"
-            fill="none"
-          />
-          <g stroke="#bac4b8" strokeWidth="2" fill="none">
-            <path d="M40 80H650M40 140H650M40 200H650M40 260H650M40 320H650M100 40V355M200 40V355M300 40V355M400 40V355M500 40V355M600 40V355" />
-          </g>
-          <path
-            d="M95 280H205V145H390V80H600M390 145V280H585"
-            stroke="#eef1e9"
-            strokeWidth="18"
-            fill="none"
-          />
-          <path
-            d="M95 280H205V145H390"
-            stroke="#a9653e"
-            strokeWidth="7"
-            fill="none"
-          />
-          <path
-            d="M390 145V80H600"
-            stroke="#537d73"
-            strokeWidth="7"
-            fill="none"
-          />
-          <path
-            d="M390 145V280H585"
-            stroke="#c29447"
-            strokeWidth="7"
-            fill="none"
-          />
-          {[
-            [205, 145, "CA-001"],
-            [390, 280, "CA-002"],
-            [600, 80, "CA-003"],
-          ].map(([x, y, id]) => (
-            <g key={id}>
-              <circle
-                cx={x}
-                cy={y}
-                r={selected === id ? 16 : 10}
-                fill="#f7f6ef"
-                stroke="#17333e"
-                strokeWidth="3"
-              />
-              <text x={Number(x) + 22} y={Number(y) - 18}>
-                {id}
-              </text>
+        <div className="network-stage">
+          <svg
+            viewBox="0 0 780 460"
+            className="network-map"
+            role="img"
+            aria-label="Fictional network with three risk-ranked segments. Select a segment from the adjacent list."
+          >
+            <defs>
+              {branches.map((branch) => (
+                <path
+                  key={branch.id}
+                  id={`${prefix}-${branch.id}`}
+                  d={branch.path}
+                />
+              ))}
+            </defs>
+            <path
+              className="network-ground"
+              d="M40 273 L364 84 L746 304 L422 450 Z"
+            />
+            <g className="network-grid" aria-hidden="true">
+              <path d="M104 310 L428 122 M168 347 L492 159 M232 384 L556 196 M296 421 L620 233 M105 235 L487 455 M169 198 L551 418 M234 160 L616 380 M299 122 L681 342" />
             </g>
-          ))}
-          <text x="36" y="365" className="map-caption">
-            ILLUSTRATIVE TOPOLOGY / NO REAL UTILITY ASSETS
-          </text>
-        </svg>
+            <g className="pipe-layers" aria-hidden="true">
+              {branches.map((branch) => (
+                <use
+                  key={branch.id}
+                  href={`#${prefix}-${branch.id}`}
+                  className="pipe-shadow"
+                />
+              ))}
+              {branches.map((branch) => (
+                <use
+                  key={branch.id}
+                  href={`#${prefix}-${branch.id}`}
+                  className="pipe-outline"
+                />
+              ))}
+              {branches.map((branch) => (
+                <use
+                  key={branch.id}
+                  href={`#${prefix}-${branch.id}`}
+                  className="pipe-body"
+                />
+              ))}
+              {branches.map((branch) => (
+                <use
+                  key={branch.id}
+                  href={`#${prefix}-${branch.id}`}
+                  className="pipe-highlight"
+                />
+              ))}
+              {branches.map((branch) => (
+                <use
+                  key={branch.id}
+                  href={`#${prefix}-${branch.id}`}
+                  className="pipe-flow"
+                />
+              ))}
+            </g>
+            <g className="network-junction" aria-hidden="true">
+              <ellipse cx="370" cy="140" rx="17" ry="10" />
+              <ellipse cx="370" cy="136" rx="17" ry="10" />
+            </g>
+            {branches.map((branch, index) => (
+              <g
+                key={branch.id}
+                className={`network-sensor ${branch.risk}`}
+                data-segment={branch.id}
+                data-selected={selected === branch.id}
+                data-scanning={moving && scanningSensor === index}
+              >
+                <ellipse
+                  className="sensor-selection"
+                  cx={branch.x}
+                  cy={branch.y + 1}
+                  rx="27"
+                  ry="16"
+                />
+                <path
+                  className="sensor-stem"
+                  d={`M${branch.x} ${branch.y} v-25`}
+                />
+                <circle
+                  className="sensor-face"
+                  cx={branch.x}
+                  cy={branch.y - 28}
+                  r="10"
+                />
+                <circle
+                  className="sensor-dot"
+                  cx={branch.x}
+                  cy={branch.y - 28}
+                  r="3"
+                />
+                <text x={branch.x + 18} y={branch.y - 27}>
+                  {branch.id}
+                </text>
+              </g>
+            ))}
+          </svg>
+          {moving && activeSensor !== null && (
+            <div
+              className="sensor-popup"
+              aria-hidden="true"
+              data-segment={branches[activeSensor].id}
+              style={{
+                left: `${(branches[activeSensor].x / 780) * 100}%`,
+                top: `${((branches[activeSensor].y - 62) / 460) * 100}%`,
+              }}
+            >
+              Simulated · {branches[activeSensor].activity}
+            </div>
+          )}
+        </div>
         <div className="legend">
           <span>● Higher risk</span>
           <span>● Moderate risk</span>
           <span>● Lower risk</span>
         </div>
+        <p className="network-simulation-note">
+          Simulated flow and sensor activity, not live telemetry.
+        </p>
       </section>
       <section className="segment-list">
         <p className="eyebrow">REPAIR PRIORITY / EXPLAINABLE RISK</p>
@@ -156,7 +281,7 @@ export function SegmentDetail({
   return (
     <div className="detail-grid">
       <section className="detail-panel">
-        <p className="eyebrow">02 / WHY THIS SEGMENT</p>
+        <p className="eyebrow">WHY THIS SEGMENT</p>
         <h2>{segment.name}</h2>
         <div className="factor-head">
           <span>Risk contribution</span>
@@ -181,7 +306,7 @@ export function SegmentDetail({
         </p>
       </section>
       <section className="detail-panel">
-        <p className="eyebrow">03 / PRESSURE RECORD</p>
+        <p className="eyebrow">PRESSURE RECORD</p>
         <p className="small">
           Alert rule: below 20 psi for at least 5 seconds of consecutive
           readings, no gap above 30 seconds. Demonstration policy only.
@@ -194,8 +319,10 @@ export function SegmentDetail({
           </p>
         )}
         <div className="pressure-number">
-          {segment.latest_reading ? segment.latest_reading.pressure_psi : "—"}{" "}
-          <small>psi</small>
+          {segment.latest_reading
+            ? segment.latest_reading.pressure_psi
+            : "No reading"}{" "}
+          {segment.latest_reading && <small>psi</small>}
           <span
             className={
               "badge " + (segment.telemetry_status !== "fresh" ? "warning" : "")
