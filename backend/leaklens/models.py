@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, StringConstraints
 
@@ -13,3 +13,28 @@ class Reading(Input):
     segment_id: Identifier
     pressure_psi: float = Field(ge=0, le=300, strict=True)
     observed_at: AwareDatetime
+
+
+class Advisory(Input):
+    draft: str = Field(min_length=10, max_length=4000)
+
+
+class Assignment(Input):
+    crew: Identifier
+
+
+class Work(Input):
+    step: Literal["repair", "flush"]
+
+
+class Sample(Input):
+    sample_id: Identifier
+    result: Literal["clear", "failed"]
+
+
+class Scenario(Input):
+    segment_id: Identifier = "CA-001"
+
+
+class Reset(Input):
+    confirm: Literal["RESET DEMO"]

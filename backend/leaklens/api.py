@@ -10,6 +10,7 @@ from . import events
 from .models import Reading
 from .network import network_view
 from .store import Store
+from .response_api import response_router
 
 
 def create_app(db_path=None, tokens=None):
@@ -61,4 +62,5 @@ def create_app(db_path=None, tokens=None):
     def ingest(body: Reading, actor=Depends(allow("ingest"))):
         return store.update(lambda state: events.ingest(state, body, actor))
 
+    app.include_router(response_router(store, allow))
     return app
