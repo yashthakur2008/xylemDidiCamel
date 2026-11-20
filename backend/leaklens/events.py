@@ -45,6 +45,11 @@ def ingest(state, reading, actor):
             state["low_since"].pop(ident, None)
         state["low_since"].setdefault(ident, observed.isoformat())
     active = next((e for e in state["events"].values() if e["segment_id"] == ident and e["status"] != "closed"), None)
+    if active and reading.pressure_psi < POLICY["pressure_threshold_psi"] and (active["clear_streak"] or active["job"]["flushed"]):
+        active["clear_streak"] = 0
+        active["job"]["flushed"] = False
+        active["status"] = "reflush_required"
+        audit(active, "pressure_loss_invalidated_samples", actor)
     since = state["low_since"].get(ident)
     if not active and since and (observed - datetime.fromisoformat(since)).total_seconds() >= POLICY["minimum_low_duration_seconds"]:
         active = {"id": str(uuid4()), "segment_id": ident, "zone": segment["zone"],

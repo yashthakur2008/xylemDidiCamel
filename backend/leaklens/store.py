@@ -4,6 +4,8 @@ import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
 
+from .state_schema import PersistentState
+
 
 def initial_state():
     return {"schema_version": 1, "readings": {}, "low_since": {}, "events": {}}
@@ -30,10 +32,14 @@ class Store:
 
     @staticmethod
     def load(db):
-        state = json.loads(db.execute("SELECT data FROM state WHERE id=1").fetchone()[0])
-        if state.get("schema_version") != 1 or any(not isinstance(state.get(k), dict) for k in ("readings", "events", "low_since")):
-            raise ValueError("Unsupported/corrupt demo database; restore from backup")
-        return state
+        row = db.execute("SELECT data FROM state WHERE id=1").fetchone()
+        if row is None:
+            raise ValueError("Missing demo database state; restore from backup")
+        try:
+            PersistentState.model_validate_json(row[0])
+        except ValueError as exc:
+            raise ValueError("Unsupported/corrupt demo database; restore from backup") from exc
+        return json.loads(row[0])
 
     def read(self):
         with self.connect() as db:
@@ -44,5 +50,7 @@ class Store:
             db.execute("BEGIN IMMEDIATE")
             state = self.load(db)
             result = operation(state)
-            db.execute("UPDATE state SET data=? WHERE id=1", (json.dumps(state, allow_nan=False),))
+            serialized = json.dumps(state, allow_nan=False)
+            PersistentState.model_validate_json(serialized)
+            db.execute("UPDATE state SET data=? WHERE id=1", (serialized,))
             return result

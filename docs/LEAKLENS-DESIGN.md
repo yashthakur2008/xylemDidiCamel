@@ -1,7 +1,7 @@
 # LeakLens: approved demo scope and design specification
 
 Date: 2026-11-19 (Pacific)
-Status: chat scope approved; implementation not started.
+Status: chat scope approved. Backend implemented separately at user request; frontend integration remains pending. See `../backend/README.md` for actual implementation boundaries.
 
 ## Goal
 A Water Quality competition demo connecting intrusion-prone pipe segments, sustained pressure-loss detection and human-approved incident response. Deliver a public website, utility dashboard and responsive field-crew experience. This is a student prototype, not an operational utility safety system.

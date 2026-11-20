@@ -6,5 +6,7 @@ __pycache__/
 *.pyc
 *.sqlite3*
 backend/data/
-backend/.local-tokens.json
+.local-tokens.json
 *.egg-info/
+build/
+dist/

@@ -4,6 +4,8 @@ from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from . import events
@@ -23,6 +25,13 @@ def create_app(db_path=None, tokens=None):
     store = Store(db_path or os.environ.get("LEAKLENS_DB", str(Path(__file__).parent.parent / "data/demo.sqlite3")))
     app = FastAPI(title="LeakLens Demo API", version="0.1.0", description="Fictional Water Quality prototype. No real notices or equipment controls. Not regulatory clearance.")
     app.state.store = store
+
+    @app.exception_handler(RequestValidationError)
+    async def invalid_input(request, exc):
+        # Do not echo raw inputs: NaN/Infinity cannot be serialized as JSON,
+        # and request bodies may eventually contain sensitive field data.
+        errors = [{"loc": e["loc"], "msg": e["msg"], "type": e["type"]} for e in exc.errors()]
+        return JSONResponse(status_code=422, content={"detail": errors})
     origins = [v.strip() for v in os.environ.get("LEAKLENS_CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",") if v.strip()]
     if "*" in origins:
         raise ValueError("Use explicit CORS origins, never wildcard")
