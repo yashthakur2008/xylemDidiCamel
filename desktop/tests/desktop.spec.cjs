@@ -26,6 +26,51 @@ const dead = (pid) => {
   }
 };
 
+test("native shell keeps Confluence title and click-safe sidebar below macOS traffic lights", async () => {
+  const data = fs.mkdtempSync(
+    path.join(process.env.JCODE_SCRATCH_DIR || os.tmpdir(), "confluence-shell-"),
+  );
+  let app;
+  try {
+    app = await launch(data);
+    const page = await app.firstWindow();
+    await expect(page.getByText("Backend connected")).toBeVisible();
+    const nativeTitle = () => app.evaluate(({ BrowserWindow }) =>
+      BrowserWindow.getAllWindows()[0].getTitle(),
+    );
+    await expect.poll(nativeTitle).toBe("Confluence");
+    await page.evaluate(() => { document.title = "Confluence marketing title must not replace native title"; });
+    await expect(page).toHaveTitle("Confluence marketing title must not replace native title");
+    await expect.poll(nativeTitle).toBe("Confluence");
+    if (process.platform === "darwin") {
+      const chrome = await app.evaluate(({ BrowserWindow }) => {
+        const win = BrowserWindow.getAllWindows()[0];
+        return { bounds: win.getBounds(), content: win.getContentBounds() };
+      });
+      // hiddenInset retains real traffic lights while extending web content
+      // into the native titlebar, unlike the old separately framed window.
+      expect(chrome.content.height).toBe(chrome.bounds.height);
+    }
+    await expect(page.locator('.app-shell[data-desktop="true"]')).toBeVisible();
+    await expect(page.locator(".app-sidebar")).toBeVisible();
+    await expect(page.locator(".app-intro-backdrop")).toHaveCount(0);
+    if (process.platform === "darwin") {
+      const brand = await page.locator(".app-brand").boundingBox();
+      expect(brand.y).toBeGreaterThanOrEqual(48);
+    }
+    await expect(page.locator(".app-topbar")).toHaveCSS("-webkit-app-region", "drag");
+    for (const [label, route] of [["Test mode", "/evaluation"], ["Crew app", "/crew"], ["Operations", "/operations"]]) {
+      const link = page.getByRole("navigation", { name: "Main navigation" }).getByRole("link", { name: label, exact: true });
+      await expect(link).toHaveCSS("-webkit-app-region", "no-drag");
+      await link.click();
+      await expect(page).toHaveURL(new RegExp(`${route}$`));
+      await expect.poll(nativeTitle).toBe("Confluence");
+    }
+  } finally {
+    await cleanupDesktop(app, data);
+  }
+});
+
 test("offline desktop completes response and persists after packaged restart", async () => {
   const data = fs.mkdtempSync(
     path.join(

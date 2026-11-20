@@ -104,6 +104,8 @@ else {
         minWidth: 720,
         minHeight: 600,
         title: "Confluence",
+        // Keep native traffic lights on macOS, and the standard OS frame elsewhere.
+        ...(process.platform === "darwin" ? { titleBarStyle: "hiddenInset" } : {}),
         backgroundColor: "#f7f6ef",
         show: false,
         webPreferences: {
@@ -115,6 +117,8 @@ else {
           partition: "leaklens-desktop",
         },
       });
+      // The web page has a descriptive marketing title, not a native window title.
+      window.on("page-title-updated", (event) => event.preventDefault());
       window.on("close", (event) => {
         if (!confirmDiscard()) event.preventDefault();
       });
