@@ -14,10 +14,10 @@ jobs:
         include:
           - os: macos-latest
             artifact: macos-arm64
-            executable: dist/mac-arm64/LeakLens.app/Contents/MacOS/LeakLens
+            executable: dist/mac-arm64/Confluence.app/Contents/MacOS/Confluence
           - os: windows-latest
             artifact: windows-x64
-            executable: dist/win-unpacked/LeakLens.exe
+            executable: dist/win-unpacked/Confluence.exe
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -65,13 +65,13 @@ jobs:
           $destination = Join-Path $env:RUNNER_TEMP 'LeakLens-acceptance'
           $setup = Start-Process -FilePath $installer.FullName -ArgumentList '/S', "/D=$destination" -Wait -PassThru
           if ($setup.ExitCode -ne 0) { throw "Installer failed: $($setup.ExitCode)" }
-          $env:LEAKLENS_PACKAGED = Join-Path $destination 'LeakLens.exe'
+          $env:LEAKLENS_PACKAGED = Join-Path $destination 'Confluence.exe'
           if (-not (Test-Path $env:LEAKLENS_PACKAGED)) { throw 'Installed executable missing' }
           npm run test:desktop
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@v4
         with:
-          name: LeakLens-${{ matrix.artifact }}-unsigned
+          name: Confluence-${{ matrix.artifact }}-unsigned
           path: |
             desktop/dist/*.dmg
             desktop/dist/*.exe
