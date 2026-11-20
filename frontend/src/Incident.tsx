@@ -1,3 +1,4 @@
+import { SamplingPlan } from "./SamplingPlan";
 import { useEffect, useState } from "react";
 import { type IncidentData, type Act, human, time } from "./api";
 export function Incident({
@@ -5,12 +6,15 @@ export function Incident({
   crewMode,
   act,
   disabled,
+  onDirtyChange,
 }: {
   event: IncidentData;
   crewMode: boolean;
   act: Act;
   disabled: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
+  const [planDirty, setPlanDirty] = useState(false);
   const [draft, setDraft] = useState(event.advisory.draft),
     [baseDraft, setBaseDraft] = useState(event.advisory.draft),
     [crew, setCrew] = useState("CREW-01"),
@@ -22,6 +26,22 @@ export function Incident({
       setBaseDraft(event.advisory.draft);
     }
   }, [event.id, event.advisory.draft, draft, baseDraft]);
+  useEffect(() => {
+    onDirtyChange?.(
+      draft !== baseDraft ||
+        planDirty ||
+        sample.trim().length > 0 ||
+        (!event.job.approved && crew !== "CREW-01"),
+    );
+  }, [
+    draft,
+    baseDraft,
+    planDirty,
+    sample,
+    crew,
+    event.job.approved,
+    onDirtyChange,
+  ]);
   const conflict =
     event.advisory.draft !== baseDraft ||
     (event.advisory.approved && draft !== event.advisory.draft);
@@ -122,6 +142,12 @@ export function Incident({
                   No real messages are sent. Save edits before approval.
                 </p>
               </section>
+              <SamplingPlan
+                event={event}
+                act={act}
+                disabled={disabled}
+                onDirty={setPlanDirty}
+              />
               <section className="workflow-step">
                 <p className="eyebrow">02 / CREW DISPATCH</p>
                 <label>
@@ -130,7 +156,7 @@ export function Incident({
                     value={event.job.approved ? event.job.crew || "" : crew}
                     onChange={(e) => setCrew(e.target.value)}
                     readOnly={event.job.approved}
-                    pattern="[A-Za-z0-9_-]+"
+                    pattern={"[A-Za-z0-9_\\-]+"}
                     maxLength={80}
                   />
                 </label>
@@ -140,7 +166,8 @@ export function Incident({
                     closed ||
                     !event.advisory.approved ||
                     event.job.approved ||
-                    !crew.trim()
+                    !crew.trim() ||
+                    planDirty
                   }
                   onClick={() =>
                     void act(path + "/job/approve", "operator", { crew })
@@ -153,6 +180,32 @@ export function Incident({
               </section>
               <section className="workflow-step">
                 <p className="eyebrow">04 / OPERATOR SIGN-OFF</p>
+                <ul className="small outstanding">
+                  <li>
+                    {event.job.approved
+                      ? "✓ Crew assigned"
+                      : "Outstanding: operator-approved crew assignment"}
+                  </li>
+                  <li>
+                    {event.job.repaired
+                      ? "✓ Repair recorded"
+                      : "Outstanding: repair record"}
+                  </li>
+                  <li>
+                    {event.job.flushed
+                      ? "✓ Current flush recorded"
+                      : "Outstanding: current flush"}
+                  </li>
+                  <li>
+                    {event.clear_streak >= event.policy.required_clear_samples
+                      ? "✓ Consecutive clear sample evidence"
+                      : "Outstanding: consecutive clear samples"}
+                  </li>
+                  <li>
+                    Fresh recovered pressure and explicit operator sign-off are
+                    checked by the backend.
+                  </li>
+                </ul>
                 <p>
                   {event.clear_streak} / {event.policy.required_clear_samples}{" "}
                   consecutive clear samples. Fresh recovered pressure is also
@@ -244,14 +297,16 @@ export function Incident({
                         result,
                       })
                     )
-                      setSample("");
+                      setSample((current) =>
+                        current === sample ? "" : current,
+                      );
                   }}
                 >
                   <label>
                     Sample ID
                     <input
                       required
-                      pattern="[A-Za-z0-9_-]+"
+                      pattern={"[A-Za-z0-9_\\-]+"}
                       maxLength={80}
                       value={sample}
                       onChange={(e) => setSample(e.target.value)}

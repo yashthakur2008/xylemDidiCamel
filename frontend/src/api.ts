@@ -26,6 +26,7 @@ export type IncidentData = {
   zone: string;
   status: string;
   detected_at: string;
+  low_pressure_since: string;
   advisory: { draft: string; approved: boolean };
   job: {
     approved: boolean;

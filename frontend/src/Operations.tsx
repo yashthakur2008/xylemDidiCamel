@@ -1,4 +1,4 @@
-import { type Segment, time } from "./api";
+import { type Segment, type IncidentData, time } from "./api";
 export function NetworkView({
   segments,
   selected,
@@ -133,14 +133,25 @@ export function NetworkView({
     </div>
   );
 }
-export function SegmentDetail({ segment }: { segment: Segment }) {
+export function SegmentDetail({
+  segment,
+  event,
+}: {
+  segment: Segment;
+  event?: IncidentData | null;
+}) {
   const readings = segment.readings,
     max = Math.max(60, ...readings.map((r) => r.pressure_psi)),
+    first = readings.length ? Date.parse(readings[0].observed_at) : 0,
+    span = readings.length
+      ? Math.max(
+          1,
+          Date.parse(readings[readings.length - 1].observed_at) - first,
+        )
+      : 1,
+    x = (at: string) => 40 + (480 * (Date.parse(at) - first)) / span,
     points = readings
-      .map(
-        (r, i) =>
-          `${40 + (i * 480) / Math.max(1, readings.length - 1)},${150 - (r.pressure_psi / max) * 120}`,
-      )
+      .map((r) => `${x(r.observed_at)},${150 - (r.pressure_psi / max) * 120}`)
       .join(" ");
   return (
     <div className="detail-grid">
@@ -171,6 +182,17 @@ export function SegmentDetail({ segment }: { segment: Segment }) {
       </section>
       <section className="detail-panel">
         <p className="eyebrow">03 / PRESSURE RECORD</p>
+        <p className="small">
+          Alert rule: below 20 psi for at least 5 seconds of consecutive
+          readings, no gap above 30 seconds. Demonstration policy only.
+        </p>
+        {event && (
+          <p className="small">
+            Drop began {time(event.low_pressure_since)} · Detected{" "}
+            {time(event.detected_at)}. Detection time is replay processing time,
+            not physical sensor latency.
+          </p>
+        )}
         <div className="pressure-number">
           {segment.latest_reading ? segment.latest_reading.pressure_psi : "—"}{" "}
           <small>psi</small>
@@ -205,10 +227,10 @@ export function SegmentDetail({ segment }: { segment: Segment }) {
                 strokeWidth="3"
                 fill="none"
               />
-              {readings.map((r, i) => (
+              {readings.map((r) => (
                 <circle
                   key={r.observed_at}
-                  cx={40 + (i * 480) / Math.max(1, readings.length - 1)}
+                  cx={x(r.observed_at)}
                   cy={150 - (r.pressure_psi / max) * 120}
                   r="4"
                   fill="#246982"
@@ -222,7 +244,7 @@ export function SegmentDetail({ segment }: { segment: Segment }) {
               </text>
             </svg>
             <p className="small muted">
-              Last observed{" "}
+              Time-scaled trace · Last observed{" "}
               {new Date(segment.latest_reading!.observed_at).toLocaleString()}.{" "}
               {readings.length} stored observations.
             </p>

@@ -930,3 +930,82 @@ button:hover:not(:disabled) {
   color: white;
   border-color: var(--ink);
 }
+
+/* Evaluation notebook: evidence first, no benchmark claims without trials. */
+.evaluation h1 {
+  max-width: 20ch;
+}
+.trial-setup,
+.trial-response,
+.trial-log,
+.trial-history {
+  padding: 2rem 0;
+  border-top: 1px solid var(--line, #cbd2c8);
+  margin-top: 2rem;
+}
+.trial-fields,
+.decision-brief {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+.decision-brief {
+  background: #edf0e7;
+  padding: 2rem;
+  margin: 1.5rem 0;
+  border: 1px solid #cbd2c8;
+}
+.decision-brief h2 {
+  margin-top: 0.5rem;
+}
+.trial-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.trial-history button {
+  display: block;
+  margin: 0.6rem 0;
+  text-align: left;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.trial-response details,
+.trial-review {
+  margin: 1.5rem 0;
+}
+.snapshot {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+  padding: 1rem;
+  background: #edf0e7;
+  max-height: 24rem;
+  overflow-y: auto;
+}
+.outstanding {
+  padding-left: 1.1rem;
+  line-height: 1.8;
+}
+.evaluation .notice p {
+  margin-bottom: 0;
+}
+@media (max-width: 700px) {
+  .trial-fields,
+  .decision-brief {
+    grid-template-columns: 1fr;
+  }
+  .decision-brief {
+    padding: 1.1rem;
+    gap: 0.75rem;
+  }
+  .trial-toolbar .actions {
+    width: 100%;
+  }
+  .trial-toolbar button {
+    flex: 1 1 auto;
+  }
+}

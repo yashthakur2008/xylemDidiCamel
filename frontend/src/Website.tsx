@@ -90,7 +90,7 @@ export function Website() {
             </em>
           </h1>
           <p className="intro">
-            The last mile of clean water is underground. LeakLens connects
+            The last mile of clean water is underground. Confluence connects
             vulnerable pipes, pressure loss and the people who respond.
           </p>
           <a className="button" href="/operations">
@@ -172,7 +172,7 @@ export function Website() {
         </div>
         <div>
           <p>
-            LeakLens never operates pumps or valves. Every notice and job needs
+            Confluence never operates pumps or valves. Every notice and job needs
             human approval. This demo sends no real customer notifications.
           </p>
           <p>

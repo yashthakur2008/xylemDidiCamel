@@ -1,5 +1,6 @@
 import { useEffect, useState, type MouseEvent } from "react";
 import { isDesktop } from "./desktop";
+import { Evaluation } from "./Evaluation";
 import { Website } from "./Website";
 import { NetworkView, SegmentDetail } from "./Operations";
 import { Incident } from "./Incident";
@@ -14,7 +15,8 @@ export default function App() {
     }),
     [selected, setSelected] = useState("CA-001"),
     [eventId, setEventId] = useState(""),
-    [reset, setReset] = useState("");
+    [reset, setReset] = useState(""),
+    [evaluationDirty, setEvaluationDirty] = useState(false);
   const workspace = path === "/operations" || path === "/crew",
     crewMode = path === "/crew",
     api = useBackend(workspace, tokens),
@@ -33,14 +35,43 @@ export default function App() {
         .leaklensDesktop!.credentials()
         .then(setTokens)
         .catch(() => {
-          console.error("Desktop access unavailable. Restart LeakLens.");
+          console.error("Desktop access unavailable. Restart Confluence.");
         });
   }, []);
   useEffect(() => {
-    const onPop = () => setPath(location.pathname);
+    const onPop = () => {
+      if (
+        evaluationDirty &&
+        location.pathname !== path &&
+        !window.confirm(
+          "Discard unsaved trial edits? Saved trial records are kept.",
+        )
+      ) {
+        history.pushState({}, "", path);
+        return;
+      }
+      setPath(location.pathname);
+    };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
-  }, []);
+  }, [path, evaluationDirty]);
+  useEffect(() => {
+    if (isDesktop)
+      void window.leaklensDesktop!.setDirty(evaluationDirty).catch(() => {
+        console.error(
+          "Desktop edit protection unavailable. Save work before closing.",
+        );
+      });
+  }, [evaluationDirty]);
+  useEffect(() => {
+    if (!evaluationDirty || isDesktop) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [evaluationDirty]);
   function navigate(e: MouseEvent<HTMLDivElement>) {
     const a = (e.target as HTMLElement).closest("a");
     if (
@@ -55,6 +86,14 @@ export default function App() {
     )
       return;
     e.preventDefault();
+    if (
+      evaluationDirty &&
+      a.pathname !== path &&
+      !window.confirm(
+        "Discard unsaved trial edits? Saved trial records are kept.",
+      )
+    )
+      return;
     history.pushState({}, "", a.pathname);
     setPath(a.pathname);
     window.scrollTo(0, 0);
@@ -66,7 +105,7 @@ export default function App() {
       </a>
       <header className="site-header">
         <a className="brand" href={isDesktop ? "/operations" : "/"}>
-          <span className="brand-icon">◉</span> LeakLens
+          <span className="brand-icon">◉</span> Confluence
           <span className="brand-tag">DISTRIBUTION INTELLIGENCE</span>
         </a>
         <nav aria-label="Main navigation">
@@ -81,6 +120,12 @@ export default function App() {
           >
             Operations
           </a>
+          <a
+            href="/evaluation"
+            aria-current={path === "/evaluation" ? "page" : undefined}
+          >
+            Test mode
+          </a>
           <a href="/crew" aria-current={crewMode ? "page" : undefined}>
             {isDesktop ? "Crew app" : "Crew app ↗"}
           </a>
@@ -89,13 +134,15 @@ export default function App() {
       <div id="main">
         {path === "/" ? (
           <Website />
+        ) : path === "/evaluation" ? (
+          <Evaluation tokens={tokens} onDirtyChange={setEvaluationDirty} />
         ) : workspace ? (
           <main className={"workspace " + (crewMode ? "crew-workspace" : "")}>
             <div className="workspace-heading">
               <div>
                 <p className="eyebrow">
                   {crewMode
-                    ? "LEAKLENS / FIELD OPERATIONS"
+                    ? "CONFLUENCE / FIELD OPERATIONS"
                     : "CALIFORNIA-STYLE NETWORK / OPERATIONS"}
                 </p>
                 <h1>{crewMode ? "Field notebook" : "Network intelligence"}</h1>
@@ -170,7 +217,7 @@ export default function App() {
                     setEventId("");
                   }}
                 />
-                {segment && <SegmentDetail segment={segment} />}
+                {segment && <SegmentDetail segment={segment} event={event} />}
                 <section className="demo-controls">
                   <div>
                     <p className="eyebrow">DEMO TELEMETRY / {selected}</p>
@@ -319,7 +366,7 @@ export default function App() {
         )}
       </div>
       <footer>
-        <strong>LeakLens</strong>
+        <strong>Confluence</strong>
         <span>Water Quality / Student prototype</span>
         <span>Simulation only. No equipment controls.</span>
       </footer>
