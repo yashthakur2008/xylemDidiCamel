@@ -1,0 +1,10 @@
+.DS_Store
+.env
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.sqlite3*
+backend/data/
+backend/.local-tokens.json
+*.egg-info/
