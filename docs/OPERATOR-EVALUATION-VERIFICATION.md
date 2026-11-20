@@ -48,3 +48,16 @@ The final local DMG passed `hdiutil verify`, was mounted read-only and copied to
 ### Lovable boundary
 
 Lovable accepted the original landing brief and produced an unpublished preview. The safe follow-up availability check found another application frontmost and only shallow Lovable accessibility groups. Final screenshot/method insertion, full mobile acceptance and publication remain blocked on safe access. The handoff at `docs/LOVABLE-HANDOFF.md` contains the exact project, pinned public screenshot URLs and verified methods URL. No claim is made that the revised public landing is live.
+
+### Final cross-platform and public release acceptance
+
+Final CI [44723345996](https://github.com/yashthakur2008/xylemDidiCamel/actions/runs/44723345996), source `610f29272bdd981652eb23942a70660fe854b59a`, passed on macOS and Windows. Both built and exercised the packaged application without developer runtimes. Windows additionally installed the generated NSIS setup and passed acceptance against the installed executable. The prior Windows failure was a test synchronization race: Save disabled also meant busy. The test now observes the persisted Notes entry and completed save controls before quitting, without bypassing the native dirty guard.
+
+[Public v0.2.0 release](https://github.com/yashthakur2008/xylemDidiCamel/releases/tag/v0.2.0) contains those CI installers, not a separately rebuilt substitute. Both assets and SHA256SUMS.txt were downloaded without authentication and verified:
+
+- `Confluence-0.2.0-arm64.dmg`: `1ad1a512dd5bd53c45fff992a6d3de47f51f94ecf72b7d11db5b16e62015bfd7`
+- `Confluence.Setup.0.2.0.exe`: `cb96bf2297bc88b5c244d9e09b30147d05cb456011c1fe5864acea45e0d0bc63`
+
+These are unsigned demonstration installers. Passing packaged/installed tests does not establish notarization, SmartScreen reputation, or empirical operator benefit. Lovable publication remains pending independently of this release.
+
+The publicly downloaded CI Mac DMG also passed hdiutil verification, was mounted read-only and copied into an isolated scratch installation. All **9 native tests passed against that exact public artifact** (30.8 seconds), including full incident/restart, isolated trial persistence, quit/reload/close cancellation, IPC rejection, crash shutdown and real JSON/CSV saved bytes. This closes the public-download-to-running-app boundary rather than relying only on the local build.
