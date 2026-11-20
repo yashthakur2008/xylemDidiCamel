@@ -1,6 +1,6 @@
 # Connected application acceptance evidence
 
-Verified 2026-11-19 Pacific / 2026-11-20 UTC. This report covers the private localhost competition prototype, not a public deployment or operational utility system.
+Verified 2026-11-19 Pacific / 2026-11-20 UTC. This report records the connected web prototype acceptance. Subsequent desktop installation and public release evidence is in [DESKTOP-VERIFICATION.md](DESKTOP-VERIFICATION.md). Neither increment is an operational utility system.
 
 ## Acceptance map
 
@@ -56,7 +56,7 @@ Backend suite: 54 passing tests. Real HTTP acceptance also passes and restarts t
 ## Delivery limits
 
 - PWA installability and offline launch were checked in Chromium. An OS-installed app launch or physical iPhone/Android installation was not performed.
-- Public hosting, TLS, GitHub publication, per-user identity and production utility readiness are not delivered by this increment. No remote is configured in this repository.
-- Google Fonts enhance online presentation; system fallbacks remain usable offline. No external map tiles are required.
+- GitHub source and desktop installers were subsequently published, as documented in DESKTOP-VERIFICATION.md. Hosted backend service, per-user identity and production utility readiness remain outside this offline demo. The existing Lovable landing page was not changed.
+- External Google Fonts were removed during desktop delivery. System fonts and local assets require no remote resources or map tiles.
 - No real notices, equipment controls, laboratory integration, photo uploads, WNTR/EPANET validation or California regulatory certification.
 - Visual review is documented human-agent inspection of real screenshots, not proof of an Awwwards-level result or successful Lovable use.

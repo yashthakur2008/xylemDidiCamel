@@ -55,3 +55,9 @@ Native build and Windows installer acceptance: https://github.com/yashthakur2008
 Release assets come from that successful CI run, pinned to source commit a546b48. The installed local Mac copy was built from identical application sources locally. Installer byte checksums can differ between independent builds. The release includes SHA256SUMS.txt for its exact downloadable artifacts.
 
 Opening the installed app for the user through the environment open tool was suppressed by NO_BROWSER/JCODE_NO_BROWSER/test-harness restrictions. Installed-app launch was nevertheless exercised successfully by the desktop acceptance runner.
+
+## Final whole-result recheck, 09:17 UTC
+
+Reran the complete local acceptance sequence after delivery on application sources unchanged from the released CI commit: 85 source/frozen backend checks passed, production frontend rebuilt successfully, all 10 production-browser cases passed, all four child-lifecycle tests passed, and both tests against the installed Mac application passed again. This re-exercised the requirement map above, including failed-sample recovery, duplicate rejection, clearance gates, persistence, child termination and single-instance behavior. Final Windows installed-executable evidence remains the successful native run 44707848005 for the exact released source; no Windows execution on this Mac is claimed.
+
+Downloaded both complete installers from the public GitHub release without authentication, together with the public SHA256SUMS.txt. `shasum -a 256 -c SHA256SUMS.txt` reported OK for both `LeakLens-0.1.0-arm64.dmg` and `LeakLens.Setup.0.1.0.exe`. This checks the actual public download path and file integrity, not merely release metadata or HTTP headers. Connected-web requirement coverage is mapped individually in FRONTEND-VERIFICATION.md; its obsolete publication and external-font limitations were corrected. No new runtime changes were needed.
