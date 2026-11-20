@@ -281,6 +281,38 @@ const savedNotes =
 const draftNotes =
   "Unsaved investigation: keep this draft while checking the sensor.";
 
+async function saveTrialNotes(page) {
+  const notesLog = page
+    .locator(".trial-log strong")
+    .filter({ hasText: /^Notes$/ });
+  const previousCount = await notesLog.count();
+  await page
+    .getByRole("button", { name: "Save investigation notes", exact: true })
+    .click();
+  // Disabled also means saving. Observe the server's new log entry and idle,
+  // clean controls before attempting native quit, especially on slower Windows CI.
+  await expect(notesLog).toHaveCount(previousCount + 1);
+  await expect(
+    page.getByRole("button", { name: "Export JSON", exact: true }),
+  ).toBeEnabled();
+  await expect(
+    page.getByRole("button", {
+      name: "Mark response ready for review",
+      exact: true,
+    }),
+  ).toBeEnabled();
+  await expect(
+    page.getByRole("button", { name: "Save investigation notes", exact: true }),
+  ).toBeDisabled();
+  await page.evaluate(
+    () =>
+      new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve)),
+      ),
+  );
+  await page.evaluate(() => window.leaklensDesktop.credentials());
+}
+
 async function editTrial(app) {
   const page = await app.firstWindow();
   await expect(page.getByText("Backend connected")).toBeVisible();
@@ -295,12 +327,7 @@ async function editTrial(app) {
     exact: true,
   });
   await notes.fill(savedNotes);
-  await page
-    .getByRole("button", { name: "Save investigation notes", exact: true })
-    .click();
-  await expect(
-    page.getByRole("button", { name: "Save investigation notes", exact: true }),
-  ).toBeDisabled();
+  await saveTrialNotes(page);
   await notes.fill(draftNotes);
   // Drain renderer effects and their IPC without setting dirty state in the test.
   await page.evaluate(
@@ -362,15 +389,7 @@ test("native quit cancellation preserves draft and running backend, discard clea
     ).toHaveValue(draftNotes);
     expect((await fetch(origin + "/health")).ok).toBe(true);
     for (const pid of pids) expect(dead(pid)).toBe(false);
-    await page
-      .getByRole("button", { name: "Save investigation notes", exact: true })
-      .click();
-    await expect(
-      page.getByRole("button", {
-        name: "Save investigation notes",
-        exact: true,
-      }),
-    ).toBeDisabled();
+    await saveTrialNotes(page);
     await page
       .getByLabel("Investigation and remaining uncertainty", { exact: true })
       .fill(draftNotes + " More edits.");
@@ -557,15 +576,7 @@ test("dirty bridge rejects malformed values and other windows, saving clears nat
         exact: true,
       }),
     ).toHaveValue(draftNotes);
-    await page
-      .getByRole("button", { name: "Save investigation notes", exact: true })
-      .click();
-    await expect(
-      page.getByRole("button", {
-        name: "Save investigation notes",
-        exact: true,
-      }),
-    ).toBeDisabled();
+    await saveTrialNotes(page);
     await page.evaluate(
       () =>
         new Promise((resolve) =>
@@ -619,15 +630,7 @@ test("desktop downloads real JSON and CSV trial exports", async () => {
   const app = await launch(data);
   try {
     const page = await editTrial(app);
-    await page
-      .getByRole("button", { name: "Save investigation notes", exact: true })
-      .click();
-    await expect(
-      page.getByRole("button", {
-        name: "Save investigation notes",
-        exact: true,
-      }),
-    ).toBeDisabled();
+    await saveTrialNotes(page);
     for (const format of ["json", "csv"]) {
       const output = path.join(data, "trial." + format);
       // Set the download destination in main rather than interacting with a native Save dialog.
