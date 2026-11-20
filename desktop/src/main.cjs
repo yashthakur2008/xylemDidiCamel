@@ -4,7 +4,46 @@ const fs = require("node:fs");
 const { startBackend } = require("./backend.cjs");
 let backend,
   window,
-  quitting = false;
+  dirty = false,
+  quitting = false,
+  backendStopped = false;
+
+function confirmDiscard() {
+  if (!dirty || quitting) return true;
+  const response = dialog.showMessageBoxSync(window, {
+    type: "warning",
+    title: "Unsaved changes",
+    message: "Discard unsaved edits?",
+    detail: "Your unsaved edits will be lost. Saved trial records are kept.",
+    buttons: ["Keep editing", "Discard"],
+    defaultId: 0,
+    cancelId: 0,
+    noLink: true,
+  });
+  if (response !== 1) return false;
+  dirty = false;
+  window.setDocumentEdited(false);
+  return true;
+}
+
+function reloadWindow(ignoreCache = false) {
+  if (quitting || !window || window.isDestroyed() || !confirmDiscard()) return;
+  if (ignoreCache) window.webContents.reloadIgnoringCache();
+  else window.webContents.reload();
+}
+
+function validateSender(event) {
+  if (
+    !window ||
+    window.isDestroyed() ||
+    event.sender !== window.webContents ||
+    event.senderFrame !== window.webContents.mainFrame ||
+    new URL(event.senderFrame.url).origin !== backend.origin
+  )
+    throw new Error("Untrusted desktop request");
+}
+// Preserve pre-Confluence installations and single-instance lock identity.
+app.setPath("userData", path.join(app.getPath("appData"), "LeakLens"));
 if (process.env.LEAKLENS_DATA_DIR)
   app.setPath("userData", path.resolve(process.env.LEAKLENS_DATA_DIR));
 const locked = app.requestSingleInstanceLock();
@@ -19,11 +58,23 @@ else {
   });
   app.on("window-all-closed", () => app.quit());
   app.on("before-quit", (event) => {
-    if (!quitting && backend) {
-      event.preventDefault();
-      quitting = true;
-      backend.stop().finally(() => app.quit());
+    if (quitting) {
+      if (!backendStopped) event.preventDefault();
+      return;
     }
+    // A cancelled quit must leave both the editor and its backend alive.
+    if (!confirmDiscard()) {
+      event.preventDefault();
+      return;
+    }
+    quitting = true;
+    if (backend) {
+      event.preventDefault();
+      backend.stop().finally(() => {
+        backendStopped = true;
+        app.quit();
+      });
+    } else backendStopped = true;
   });
   app.whenReady().then(async () => {
     try {
@@ -52,7 +103,7 @@ else {
         height: 900,
         minWidth: 720,
         minHeight: 600,
-        title: "LeakLens",
+        title: "Confluence",
         backgroundColor: "#f7f6ef",
         show: false,
         webPreferences: {
@@ -64,10 +115,22 @@ else {
           partition: "leaklens-desktop",
         },
       });
+      window.on("close", (event) => {
+        if (!confirmDiscard()) event.preventDefault();
+      });
+      window.webContents.on("before-input-event", (event, input) => {
+        const reload =
+          input.key === "F5" ||
+          ((input.control || input.meta) && input.key.toLowerCase() === "r");
+        if (input.type === "keyDown" && reload) {
+          event.preventDefault();
+          if (!input.isAutoRepeat) reloadWindow(input.shift);
+        }
+      });
       Menu.setApplicationMenu(
         Menu.buildFromTemplate([
           {
-            label: "LeakLens",
+            label: "Confluence",
             submenu: [
               { role: "about" },
               { type: "separator" },
@@ -78,7 +141,11 @@ else {
           {
             label: "View",
             submenu: [
-              { role: "reload" },
+              {
+                label: "Reload",
+                accelerator: "CmdOrCtrl+R",
+                click: () => reloadWindow(),
+              },
               { role: "resetZoom" },
               { role: "zoomIn" },
               { role: "zoomOut" },
@@ -103,28 +170,33 @@ else {
         event.preventDefault(),
       );
       ipcMain.handle("leaklens:credentials", (event) => {
-        if (
-          event.sender !== window.webContents ||
-          event.senderFrame !== window.webContents.mainFrame ||
-          new URL(event.senderFrame.url).origin !== backend.origin
-        )
-          throw new Error("Untrusted desktop request");
+        validateSender(event);
         return backend.tokens;
+      });
+      ipcMain.handle("leaklens:set-dirty", (event, value) => {
+        validateSender(event);
+        if (typeof value !== "boolean")
+          throw new TypeError("Dirty state must be a boolean");
+        if (quitting) return;
+        dirty = value;
+        window.setDocumentEdited(dirty);
       });
       await window.loadURL(backend.origin + "/operations");
       window.show();
       backend.exited.then(() => {
         if (!quitting) {
+          // A dead backend cannot save edits. Do not trap termination in a discard loop.
+          dirty = false;
           dialog.showErrorBox(
-            "LeakLens backend stopped",
-            "Your saved data remains on this computer. Close and reopen LeakLens to continue.",
+            "Confluence backend stopped",
+            "Your saved data remains on this computer. Close and reopen Confluence to continue.",
           );
           app.quit();
         }
       });
     } catch (error) {
       dialog.showErrorBox(
-        "LeakLens could not start",
+        "Confluence could not start",
         `${error.message}\nNo developer tools are required. Reinstall the complete application if its bundled files are missing.`,
       );
       app.quit();

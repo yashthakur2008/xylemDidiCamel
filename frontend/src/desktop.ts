@@ -4,6 +4,7 @@ declare global {
     leaklensDesktop?: {
       readonly isDesktop: true;
       credentials(): Promise<Tokens>;
+      setDirty(dirty: boolean): Promise<void>;
     };
   }
 }
