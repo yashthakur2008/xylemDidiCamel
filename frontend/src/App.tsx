@@ -1,4 +1,5 @@
 import { useEffect, useState, type MouseEvent } from "react";
+import { isDesktop } from "./desktop";
 import { Website } from "./Website";
 import { NetworkView, SegmentDetail } from "./Operations";
 import { Incident } from "./Incident";
@@ -26,6 +27,15 @@ export default function App() {
       visibleEvents.find((e) => e.id === eventId) ||
       visibleEvents.find((e) => e.status !== "closed") ||
       visibleEvents.at(-1);
+  useEffect(() => {
+    if (isDesktop)
+      window
+        .leaklensDesktop!.credentials()
+        .then(setTokens)
+        .catch(() => {
+          console.error("Desktop access unavailable. Restart LeakLens.");
+        });
+  }, []);
   useEffect(() => {
     const onPop = () => setPath(location.pathname);
     window.addEventListener("popstate", onPop);
@@ -55,14 +65,16 @@ export default function App() {
         Skip to content
       </a>
       <header className="site-header">
-        <a className="brand" href="/">
+        <a className="brand" href={isDesktop ? "/operations" : "/"}>
           <span className="brand-icon">◉</span> LeakLens
           <span className="brand-tag">DISTRIBUTION INTELLIGENCE</span>
         </a>
         <nav aria-label="Main navigation">
-          <a href="/" aria-current={path === "/" ? "page" : undefined}>
-            Overview
-          </a>
+          {!isDesktop && (
+            <a href="/" aria-current={path === "/" ? "page" : undefined}>
+              Overview
+            </a>
+          )}
           <a
             href="/operations"
             aria-current={path === "/operations" ? "page" : undefined}
@@ -70,7 +82,7 @@ export default function App() {
             Operations
           </a>
           <a href="/crew" aria-current={crewMode ? "page" : undefined}>
-            Crew app ↗
+            {isDesktop ? "Crew app" : "Crew app ↗"}
           </a>
         </nav>
       </header>
@@ -104,36 +116,40 @@ export default function App() {
               <span>Fictional data · no real notices</span>
               <button onClick={() => void api.refresh()}>Refresh data</button>
             </div>
-            <details className="access">
-              <summary>Demo access</summary>
-              <p className="small">
-                Private local demo credentials. Tokens stay in memory and clear
-                on reload. Changing views does not grant permissions. Never use
-                real utility data.
-              </p>
-              <div className="token-fields">
-                {(["operator", "crew", "ingest"] as Role[]).map((role) => (
-                  <label key={role}>
-                    {human(role)} token
-                    <input
-                      type="password"
-                      autoComplete="off"
-                      value={tokens[role]}
-                      onChange={(e) =>
-                        setTokens({ ...tokens, [role]: e.target.value })
-                      }
-                    />
-                  </label>
-                ))}
-              </div>
-              <button
-                onClick={() =>
-                  setTokens({ operator: "", crew: "", ingest: "" })
-                }
-              >
-                Clear credentials
-              </button>
-            </details>
+            {isDesktop ? (
+              <p className="small">Offline desktop · local data</p>
+            ) : (
+              <details className="access">
+                <summary>Demo access</summary>
+                <p className="small">
+                  Private local demo credentials. Tokens stay in memory and
+                  clear on reload. Changing views does not grant permissions.
+                  Never use real utility data.
+                </p>
+                <div className="token-fields">
+                  {(["operator", "crew", "ingest"] as Role[]).map((role) => (
+                    <label key={role}>
+                      {human(role)} token
+                      <input
+                        type="password"
+                        autoComplete="off"
+                        value={tokens[role]}
+                        onChange={(e) =>
+                          setTokens({ ...tokens, [role]: e.target.value })
+                        }
+                      />
+                    </label>
+                  ))}
+                </div>
+                <button
+                  onClick={() =>
+                    setTokens({ operator: "", crew: "", ingest: "" })
+                  }
+                >
+                  Clear credentials
+                </button>
+              </details>
+            )}
             {api.error && (
               <div className="notice error" role="alert">
                 {api.error}
@@ -278,7 +294,7 @@ export default function App() {
                 </button>
               </details>
             )}
-            {crewMode && (
+            {crewMode && !isDesktop && (
               <details className="install-help">
                 <summary>Install the crew app</summary>
                 <p>

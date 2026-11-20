@@ -1,3 +1,4 @@
+import { isDesktop } from "./desktop";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   request,
@@ -70,6 +71,7 @@ export function useBackend(enabled: boolean, tokens: Tokens) {
       if (!document.hidden) void refresh();
     };
     const offline = () => {
+      if (isDesktop) return;
       generation.current++;
       controller.current?.abort();
       setAvailable(false);
@@ -92,7 +94,7 @@ export function useBackend(enabled: boolean, tokens: Tokens) {
   }, [enabled, refresh]);
   const act: Act = async (path, role, body, method = "POST") => {
     if (lock.current) return false;
-    if (!available || !navigator.onLine) {
+    if (!available || (!isDesktop && !navigator.onLine)) {
       setError("Backend unavailable. Reconnect before submitting.");
       return false;
     }

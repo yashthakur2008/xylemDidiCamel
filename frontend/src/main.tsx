@@ -1,5 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { isDesktop } from "./desktop";
 import App from "./App";
 import "./styles.css";
 createRoot(document.getElementById("root")!).render(
@@ -7,7 +8,7 @@ createRoot(document.getElementById("root")!).render(
     <App />
   </React.StrictMode>,
 );
-if (import.meta.env.PROD && "serviceWorker" in navigator) {
+if (!isDesktop && import.meta.env.PROD && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
       .register("/sw.js")

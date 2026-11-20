@@ -1,0 +1,57 @@
+{
+  "name": "leaklens-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Offline Water Quality incident-response simulation",
+  "author": "LeakLens student team",
+  "main": "src/main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test tests/backend.test.cjs",
+    "test:desktop": "playwright test",
+    "build:frontend": "npm --prefix ../frontend run build",
+    "build:backend": "python scripts/build-backend.py",
+    "pack": "electron-builder --dir --publish never",
+    "dist": "electron-builder --publish never"
+  },
+  "devDependencies": {
+    "electron": "45.4.1",
+    "electron-builder": "26.18.0",
+    "@playwright/test": "1.65.1"
+  },
+  "build": {
+    "appId": "org.leaklens.desktop",
+    "productName": "LeakLens",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../frontend/dist",
+        "to": "frontend"
+      },
+      {
+        "from": "build/backend",
+        "to": "backend"
+      }
+    ],
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.productivity",
+      "identity": null
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "icon": "../frontend/public/icon-512.png"
+  }
+}
