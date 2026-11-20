@@ -1,0 +1,66 @@
+{
+  "label": "Preregistered synthetic software conditions, not measurements",
+  "results": [
+    {
+      "trace_id": "sustained",
+      "segment_id": "CA-001",
+      "alert_count": 1,
+      "detection_elapsed_s": [
+        6
+      ],
+      "low_since_elapsed_s": [
+        1
+      ]
+    },
+    {
+      "trace_id": "brief",
+      "segment_id": "CA-001",
+      "alert_count": 0,
+      "detection_elapsed_s": [],
+      "low_since_elapsed_s": []
+    },
+    {
+      "trace_id": "baseline",
+      "segment_id": "CA-001",
+      "alert_count": 0,
+      "detection_elapsed_s": [],
+      "low_since_elapsed_s": []
+    },
+    {
+      "trace_id": "threshold",
+      "segment_id": "CA-001",
+      "alert_count": 0,
+      "detection_elapsed_s": [],
+      "low_since_elapsed_s": []
+    },
+    {
+      "trace_id": "missing",
+      "segment_id": "CA-001",
+      "alert_count": 1,
+      "detection_elapsed_s": [
+        37
+      ],
+      "low_since_elapsed_s": [
+        32
+      ]
+    },
+    {
+      "trace_id": "gap30",
+      "segment_id": "CA-001",
+      "alert_count": 1,
+      "detection_elapsed_s": [
+        30
+      ],
+      "low_since_elapsed_s": [
+        0
+      ]
+    },
+    {
+      "trace_id": "gap31",
+      "segment_id": "CA-001",
+      "alert_count": 0,
+      "detection_elapsed_s": [],
+      "low_since_elapsed_s": []
+    }
+  ]
+}

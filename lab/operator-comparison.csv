@@ -1,0 +1,1 @@
+session_id,participant_code,evidence_class,condition,scenario,trace_id,app_run_state_id,order,task_id,start_rule,stop_rule,task_seconds,score_0_1_2,assistance_count,error_count,safety_error,missing_data_interpretation,completed,exclusion_reason,notes
