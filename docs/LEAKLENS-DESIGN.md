@@ -52,7 +52,7 @@ Record prompts and observed results. Do not claim a pass occurred merely because
 - Production build passes and local HTTP/route/asset checks pass. Deployment configuration and demo limitations documented.
 
 ## Submission
-Official deadline: November 20, 2026, 1 PM Pacific. Required: project page, slides, 3–4 minute video. Judging: Impact, Challenge Fit/Feasibility, Innovation. Confirm High School/University division before final submission. Document outside assistance and verify source citations. Do not invent measured health benefits, validated detection rates, pilot partners or costs.
+Deadline discrepancy: the supplied official-rules PDF states November 20, 2026, 1 PM Eastern (10 AM Pacific); the previously cited website time was 1 PM Pacific. Plan for the earlier deadline unless the organizer confirms otherwise. Required: project page, slides, 3–4 minute video. Judging: Impact, Challenge Fit/Feasibility, Innovation. Confirm High School/University division before final submission. Document outside assistance and verify source citations. Do not invent measured health benefits, validated detection rates, pilot partners or costs.
 
 ## Deployment
 Prefer a static deployable demo with no credentials or external runtime dependencies required for the judge walkthrough. Real backend, RBAC, sensor ingestion, PostGIS and hydraulic simulation remain explicitly future scope unless implemented. Public deployment and GitHub visibility must be checked before publishing.
